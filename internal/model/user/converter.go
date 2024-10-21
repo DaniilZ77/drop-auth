@@ -1,8 +1,6 @@
 package user
 
 import (
-	"strings"
-
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 )
@@ -16,7 +14,7 @@ func FromUpdateUserRequest(req *userv1.UpdateUserRequest, userID int) *core.Upda
 			user.Username = &req.GetUser().Username
 		} else if path == "email" {
 			user.Email = &req.GetUser().Email
-		} else if strings.HasPrefix(path, "password") {
+		} else if path == "password" {
 			user.Password = new(core.UpdatePassword)
 			user.Password.OldPassword = req.GetUser().GetPassword().GetOldPassword()
 			user.Password.NewPassword = req.GetUser().GetPassword().GetNewPassword()

@@ -8,6 +8,9 @@ import (
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
+	constraints "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type store struct {
@@ -76,45 +79,22 @@ func (s *store) AddUser(ctx context.Context, user core.User) (userID int, err er
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	// starting transaction
-	tx, err := s.DB.Begin()
-	if err != nil {
-		return 0, err
-	}
-
-	defer func() {
-		if err != nil {
-			tx.Rollback() // nolint
-		} else {
-			tx.Commit() // nolint
-		}
-	}()
-
-	stmt := `SELECT id FROM users
-	WHERE username = $1`
-
-	err = tx.QueryRowContext(ctx, stmt, user.Username).Scan(&userID)
-	if userID != 0 {
-		return 0, core.ErrUsernameAlreadyExists
-	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return 0, err
-	}
-
-	stmt = `SELECT id FROM users
-	WHERE email = $1`
-
-	err = tx.QueryRowContext(ctx, stmt, user.Email).Scan(&userID)
-	if userID != 0 {
-		return 0, core.ErrEmailAlreadyExists
-	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return 0, err
-	}
-
-	stmt = `INSERT INTO users (username, email, password_hash)
+	stmt := `INSERT INTO users (username, email, password_hash)
 	VALUES ($1, $2, $3) RETURNING id`
 
-	err = tx.QueryRowContext(ctx, stmt, user.Username, user.Email, user.PasswordHash).Scan(&userID)
+	err = s.DB.QueryRowContext(ctx, stmt, user.Username, user.Email, user.PasswordHash).Scan(&userID)
 	if err != nil {
+		var pg *pgconn.PgError
+		if ok := errors.As(err, &pg); ok && pg.Code == pgerrcode.UniqueViolation {
+			switch {
+			case pg.ConstraintName == constraints.UniqueUsernameConstraint:
+				return 0, core.ErrUsernameAlreadyExists
+			case pg.ConstraintName == constraints.UniqueEmailConstraint:
+				return 0, core.ErrEmailAlreadyExists
+			default:
+				return 0, core.ErrAlreadyExists
+			}
+		}
 		return 0, err
 	}
 
@@ -130,40 +110,6 @@ func (s *store) UpdateUser(ctx context.Context, user core.UpdateUser) (userID in
 		password = &user.Password.NewPassword
 	}
 
-	// starting transaction
-	tx, err := s.DB.Begin()
-	if err != nil {
-		return 0, err
-	}
-
-	defer func() {
-		if err != nil {
-			tx.Rollback() // nolint
-		} else {
-			tx.Commit() // nolint
-		}
-	}()
-
-	if user.Email != nil {
-		stmt := `SELECT id FROM users WHERE email = $1`
-		err = tx.QueryRowContext(ctx, stmt, user.Email).Scan(&userID)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return 0, err
-		} else if userID != 0 {
-			return 0, core.ErrEmailAlreadyExists
-		}
-	}
-
-	if user.Username != nil {
-		stmt := `SELECT id FROM users WHERE username = $1`
-		err = tx.QueryRowContext(ctx, stmt, user.Username).Scan(&userID)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return 0, err
-		} else if userID != 0 {
-			return 0, core.ErrUsernameAlreadyExists
-		}
-	}
-
 	stmt := `UPDATE users SET
 	password_hash = COALESCE($1, password_hash),
 	username = COALESCE($2, username),
@@ -171,8 +117,19 @@ func (s *store) UpdateUser(ctx context.Context, user core.UpdateUser) (userID in
 	updated_at = DEFAULT
 	WHERE id = $4
 	RETURNING id`
-	err = tx.QueryRowContext(ctx, stmt, password, user.Username, user.Email, user.ID).Scan(&userID)
+	err = s.DB.QueryRowContext(ctx, stmt, password, user.Username, user.Email, user.ID).Scan(&userID)
 	if err != nil {
+		var pg *pgconn.PgError
+		if ok := errors.As(err, &pg); ok && pg.Code == pgerrcode.UniqueViolation {
+			switch {
+			case pg.ConstraintName == constraints.UniqueUsernameConstraint:
+				return 0, core.ErrUsernameAlreadyExists
+			case pg.ConstraintName == constraints.UniqueEmailConstraint:
+				return 0, core.ErrEmailAlreadyExists
+			default:
+				return 0, core.ErrAlreadyExists
+			}
+		}
 		return 0, err
 	}
 

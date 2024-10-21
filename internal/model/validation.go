@@ -1,8 +1,6 @@
 package model
 
 import (
-	"strings"
-
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model/validator"
 	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
@@ -28,7 +26,7 @@ func ValidateUpdateUserRequest(v *validator.Validator, req *userv1.UpdateUserReq
 			validateUsername(v, req.User.GetUsername())
 		} else if path == "email" {
 			validateEmail(v, req.User.GetEmail())
-		} else if strings.HasPrefix(path, "password") {
+		} else if path == "password" {
 			validatePassword(v, req.User.GetPassword().GetOldPassword())
 			validatePassword(v, req.User.GetPassword().GetNewPassword())
 		}
@@ -60,5 +58,5 @@ func validatePassword(v *validator.Validator, password string) {
 }
 
 func validatePath(v *validator.Validator, path string) {
-	v.Check(validator.OneOf(path, "username", "email") || validator.HasPrefix(path, "password"), "path", "path should be one of username, email or password")
+	v.Check(validator.OneOf(path, "username", "email", "password"), "path", "path should be one of username, email or password")
 }

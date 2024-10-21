@@ -10,6 +10,7 @@ import (
 	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -45,9 +46,13 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		logger.Log().Fatal(ctx, "failed to register gateway: %w", err)
 	}
 
+	// Cors
+	withCors := cors.AllowAll().Handler(gwmux)
+
+	// Server
 	gwServer := &http.Server{
 		Addr:              cfg.HTTPPort,
-		Handler:           gwmux,
+		Handler:           withCors,
 		ReadHeaderTimeout: time.Duration(cfg.ReadTimeout) * time.Second,
 	}
 
@@ -66,7 +71,8 @@ func (app *App) MustRun(ctx context.Context) {
 
 func (app *App) Run(ctx context.Context) error {
 	logger.Log().Info(ctx, "http server started on %s", app.httpServer.Addr)
-	return app.httpServer.ListenAndServeTLS(app.cert, app.key)
+	// return app.httpServer.ListenAndServeTLS(app.cert, app.key)
+	return app.httpServer.ListenAndServe()
 }
 
 func (app *App) Stop(ctx context.Context) {

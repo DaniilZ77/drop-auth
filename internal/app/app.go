@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	grpcapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/gprc"
+	grpcapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/grpc"
 	httpapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/http"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"

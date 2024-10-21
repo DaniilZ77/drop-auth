@@ -75,7 +75,7 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 	retUser, err := s.authService.Signup(ctx, *user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrEmailAlreadyExists) || errors.Is(err, core.ErrUsernameAlreadyExists) {
+		if errors.Is(err, core.ErrEmailAlreadyExists) || errors.Is(err, core.ErrUsernameAlreadyExists) || errors.Is(err, core.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())

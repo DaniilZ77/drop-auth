@@ -14,6 +14,7 @@ var (
 	ErrUsernameAlreadyExists = errors.New("username already exists")
 	ErrRefreshTokenNotValid  = errors.New("refresh token not valid")
 	ErrAlreadyDeleted        = errors.New("already deleted")
+	ErrAlreadyExists         = errors.New("already exists")
 
 	// validation
 	ErrValidationFailed = errors.New("validation failed")

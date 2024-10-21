@@ -116,12 +116,8 @@ func (s *service) Signup(ctx context.Context, user core.User) (*core.User, error
 		logger.Log().Error(ctx, err.Error())
 		return nil, err
 	}
+	user.ID = userID
+	user.IsDeleted = false
 
-	retUser, err := s.userStorage.GetUserByID(ctx, userID)
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, err
-	}
-
-	return retUser, nil
+	return &user, nil
 }

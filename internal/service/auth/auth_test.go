@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -98,11 +99,14 @@ func TestSignup_Success(t *testing.T) {
 		err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 		return err == nil
 	})).Return(userID, nil).Once()
-	userStore.EXPECT().GetUserByID(mock.Anything, userID).Return(userFromDB, nil).Once()
 
 	retUser, err := authService.Signup(context.Background(), user)
+	fmt.Println(retUser)
 	assert.NoError(t, err)
-	assert.Equal(t, userFromDB, retUser)
+	assert.Equal(t, userFromDB.ID, retUser.ID)
+	assert.Equal(t, userFromDB.Email, retUser.Email)
+	assert.Equal(t, userFromDB.IsDeleted, retUser.IsDeleted)
+	assert.Equal(t, userFromDB.Username, retUser.Username)
 }
 
 func TestSignup_Fail(t *testing.T) {
@@ -112,39 +116,16 @@ func TestSignup_Fail(t *testing.T) {
 	authService, userStore, _ := initService(t)
 
 	// vars
-	ctx := context.Background()
 	user := core.User{
 		PasswordHash: password,
 	}
 	wantErr := errors.New("internal error")
 
-	tests := []struct {
-		name      string
-		behaviour func()
-	}{
-		{
-			name: "AddUser error",
-			behaviour: func() {
-				userStore.EXPECT().AddUser(mock.Anything, mock.Anything).Return(0, wantErr).Once()
-			},
-		},
-		{
-			name: "GetUserByID error",
-			behaviour: func() {
-				userStore.EXPECT().AddUser(mock.Anything, mock.Anything).Return(0, nil).Once()
-				userStore.EXPECT().GetUserByID(mock.Anything, mock.Anything).Return(nil, wantErr).Once()
-			},
-		},
-	}
+	// mock behaviour
+	userStore.EXPECT().AddUser(mock.Anything, mock.Anything).Return(0, wantErr).Once()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.behaviour()
-
-			_, err := authService.Signup(ctx, user)
-			assert.ErrorIs(t, err, wantErr)
-		})
-	}
+	_, err := authService.Signup(context.Background(), user)
+	assert.ErrorIs(t, err, wantErr)
 }
 
 func TestLogin_Success(t *testing.T) {
