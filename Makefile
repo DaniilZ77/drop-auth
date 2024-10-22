@@ -1,4 +1,4 @@
-SERVICE_NAME=beatflow-auth
+SERVICE_NAME=drop-auth
 
 TEST_FLAGS=-count=1
 BUILD_FLAGS=
@@ -6,7 +6,7 @@ BUILD_FLAGS=
 .PHONY: run, build, lint, test, coverage, migrate-new, migrate-up, migrate-down
 
 # TODO define your envs, switch log_level to `debug` during developing
-PG_URL=postgres://postgres:postgres@localhost:5432/beatflow-auth
+PG_URL=postgres://postgres:postgres@localhost:5432/drop-auth
 
 run: ### run app
 	go run cmd/auth/main.go -db_url '$(PG_URL)' \

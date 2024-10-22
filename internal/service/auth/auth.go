@@ -52,6 +52,11 @@ func (s *service) RefreshToken(ctx context.Context, refreshToken string) (access
 		return nil, nil, err
 	}
 
+	if userFromDB.IsDeleted {
+		logger.Log().Error(ctx, core.ErrAlreadyDeleted.Error())
+		return nil, nil, core.ErrAlreadyDeleted
+	}
+
 	accessToken, err := jwt.GenerateToken(userFromDB.ID, s.authConfig)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())

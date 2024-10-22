@@ -40,6 +40,11 @@
         },
         "tags": [
           "UserService"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "patch": {
@@ -70,6 +75,11 @@
         ],
         "tags": [
           "UserService"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -214,10 +224,5 @@
       "name": "Authorization",
       "in": "header"
     }
-  },
-  "security": [
-    {
-      "bearer": []
-    }
-  ]
+  }
 }

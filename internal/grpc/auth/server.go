@@ -31,8 +31,8 @@ func (s *server) RefreshToken(ctx context.Context, req *authv1.RefreshTokenReque
 	accessToken, refreshToken, err := s.authService.RefreshToken(ctx, req.GetRefreshToken())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrRefreshTokenNotValid) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+		if errors.Is(err, core.ErrAlreadyDeleted) || errors.Is(err, core.ErrRefreshTokenNotValid) {
+			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
