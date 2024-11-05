@@ -88,7 +88,7 @@ func TestSignup_Success(t *testing.T) {
 	userID := 1
 	user := core.User{
 		Username:     "alex123",
-		Email:        "alex@gmail.com",
+		Email:        &[]string{"alex@gmail.com"}[0],
 		PasswordHash: password,
 	}
 	userFromDB := &user
@@ -154,12 +154,12 @@ func TestLogin_Success(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	user := core.User{
-		Email:        email,
+		Email:        &email,
 		PasswordHash: password,
 	}
 	userFromDB := &core.User{
 		ID:           userID,
-		Email:        email,
+		Email:        &email,
 		PasswordHash: string(hashedPassword),
 	}
 	var retRefreshToken string
@@ -190,6 +190,10 @@ func TestLogin_AlreadyDeletedUser(t *testing.T) {
 	authService, userStore, _ := initService(t)
 
 	// vars
+	email := "alex@gmail.com"
+	user := core.User{
+		Email: &email,
+	}
 	userFromDB := &core.User{
 		IsDeleted: true,
 	}
@@ -197,7 +201,7 @@ func TestLogin_AlreadyDeletedUser(t *testing.T) {
 	// mock behaviour
 	userStore.EXPECT().GetUserByEmail(mock.Anything, mock.Anything).Return(userFromDB, nil).Once()
 
-	_, _, err := authService.Login(context.Background(), core.User{})
+	_, _, err := authService.Login(context.Background(), user)
 	assert.ErrorIs(t, err, core.ErrAlreadyDeleted)
 }
 
@@ -208,7 +212,9 @@ func TestLogin_InvalidPassword(t *testing.T) {
 	authService, userStore, _ := initService(t)
 
 	// vars
+	email := "alex@gmail.com"
 	user := core.User{
+		Email:        &email,
 		PasswordHash: password,
 	}
 	userFromDB := &core.User{
@@ -230,11 +236,13 @@ func TestLogin_Fail(t *testing.T) {
 
 	// vars
 	ctx := context.Background()
+	email := "alex@gmail.com"
 	wantError := errors.New("internal error")
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	user := core.User{
 		PasswordHash: password,
+		Email:        &email,
 	}
 	userFromDB := &core.User{
 		PasswordHash: string(passwordHash),

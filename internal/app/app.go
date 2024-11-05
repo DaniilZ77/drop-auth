@@ -10,8 +10,10 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/auth"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/mail"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/user"
 	userstore "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres/user"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/confirmationcode"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/refreshtoken"
 )
 
@@ -48,13 +50,29 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	// Store
 	userStore := userstore.New(pg)
 	refreshTokenStore := refreshtoken.New(rdb)
+	confirmationCodeStore := confirmationcode.New(rdb)
 
 	// Service
 	authService := auth.New(userStore, refreshTokenStore, authConfig)
 	userService := user.New(userStore)
+	mailService := mail.New(
+		cfg.SMPT.Host,
+		cfg.SMPT.Port,
+		cfg.SMPT.Username,
+		cfg.SMPT.Password,
+		cfg.SMPT.Sender,
+		confirmationCodeStore,
+		userStore,
+	)
 
 	// gRPC server
-	gRPCApp := grpcapp.New(ctx, authService, userService, authConfig, cfg)
+	gRPCApp := grpcapp.New(
+		ctx,
+		authService,
+		userService,
+		authConfig,
+		mailService,
+		cfg)
 
 	// HTTP server
 	httpServer := httpapp.New(ctx, cfg)

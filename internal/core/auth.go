@@ -23,4 +23,10 @@ type (
 		GetRefreshToken(ctx context.Context, tokenID string) (int, error)
 		DeleteRefreshToken(ctx context.Context, prevTokenID string) error
 	}
+
+	ConfirmationCodeStore interface {
+		SetConfirmationCode(ctx context.Context, userID int, code string, expiresIn time.Duration) error
+		GetConfirmationCode(ctx context.Context, code string) (int, error)
+		DeleteConfirmationCode(ctx context.Context, code string) error
+	}
 )

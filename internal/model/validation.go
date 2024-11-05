@@ -4,29 +4,54 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model/validator"
 	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
-	fieldmask "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 func ValidateLoginRequest(v *validator.Validator, req *authv1.LoginRequest) {
-	validateEmail(v, req.GetEmail())
+	validateEmailOrTelephone(v, req.GetEmail(), req.GetTelephone())
+	if req.GetEmail() != "" {
+		validateEmail(v, req.GetEmail())
+	}
+	if req.GetTelephone() != "" {
+		validatePhone(v, req.GetTelephone())
+	}
 	validatePassword(v, req.GetPassword())
 }
 
 func ValidateSignupRequest(v *validator.Validator, req *authv1.SignupRequest) {
+	validateEmailOrTelephone(v, req.GetEmail(), req.GetTelephone())
+	if req.GetEmail() != "" {
+		validateEmail(v, req.GetEmail())
+	}
+	if req.GetTelephone() != "" {
+		validatePhone(v, req.GetTelephone())
+	}
+	if req.GetMiddleName() != "" {
+		v.Check(validator.Between(len(req.GetMiddleName()), 2, 128), "middle_name", "length must be between 2 and 128")
+	}
 	validateUsername(v, req.GetUsername())
-	validateEmail(v, req.GetEmail())
+	v.Check(validator.Between(len(req.GetFirstName()), 2, 128), "first_name", "length must be between 2 and 128")
+	v.Check(validator.Between(len(req.GetLastName()), 2, 128), "last_name", "length must be between 2 and 128")
+	v.Check(validator.Between(len(req.GetPseudonym()), 2, 32), "pseudonym", "length must be between 2 and 32")
 	validatePassword(v, req.GetPassword())
 }
 
 func ValidateUpdateUserRequest(v *validator.Validator, req *userv1.UpdateUserRequest) {
-	validateMask(v, req.GetUpdateMask())
+	v.Check(req.GetUpdateMask() != nil, "mask", "mask is required")
 	for _, path := range req.GetUpdateMask().GetPaths() {
-		validatePath(v, path)
-		if path == "username" {
+		switch path {
+		case "username":
 			validateUsername(v, req.User.GetUsername())
-		} else if path == "email" {
+		case "email":
 			validateEmail(v, req.User.GetEmail())
-		} else if path == "password" {
+		case "telephone":
+			validatePhone(v, req.GetUser().GetTelephone())
+		case "firstName":
+			validateName(v, path, req.GetUser().GetFirstName())
+		case "lastName":
+			validateName(v, path, req.GetUser().GetLastName())
+		case "middleName":
+			validateName(v, path, req.GetUser().GetMiddleName())
+		case "password":
 			validatePassword(v, req.User.GetPassword().GetOldPassword())
 			validatePassword(v, req.User.GetPassword().GetNewPassword())
 		}
@@ -34,15 +59,19 @@ func ValidateUpdateUserRequest(v *validator.Validator, req *userv1.UpdateUserReq
 }
 
 func ValidateGetUserRequest(v *validator.Validator, req *userv1.GetUserRequest) {
-	validateID(v, int(req.GetUserId()))
+	v.Check(req.GetUserId() > 0, "user_id", "must be positive")
 }
 
-func validateID(v *validator.Validator, id int) {
-	v.Check(id > 0, "id", "must be positive")
+func ValidateResendEmailRequest(v *validator.Validator, req *authv1.ResendEmailRequest) {
+	validateEmail(v, req.GetEmail())
 }
 
-func validateMask(v *validator.Validator, mask *fieldmask.FieldMask) {
-	v.Check(mask != nil, "mask", "mask is required")
+func validateName(v *validator.Validator, key string, name string) {
+	v.Check(validator.Between(len(name), 2, 128), key, "length must be between 2 and 128")
+}
+
+func validateEmailOrTelephone(v *validator.Validator, email, telephone string) {
+	v.Check(email != "" || telephone != "", "email_or_telephone", "email xor telephone must be provided")
 }
 
 func validateEmail(v *validator.Validator, email string) {
@@ -57,6 +86,6 @@ func validatePassword(v *validator.Validator, password string) {
 	v.Check(validator.AtLeast(len(password), 8), "password", "must contain at least 8 characters")
 }
 
-func validatePath(v *validator.Validator, path string) {
-	v.Check(validator.OneOf(path, "username", "email", "password"), "path", "path should be one of username, email or password")
+func validatePhone(v *validator.Validator, phone string) {
+	v.Check(validator.Matches(phone, validator.PhoneRX), "telephone", "must be valid")
 }

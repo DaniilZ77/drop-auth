@@ -13,6 +13,7 @@ type (
 		DB
 		TLS
 		Auth
+		SMPT
 	}
 
 	HTTP struct {
@@ -30,6 +31,14 @@ type (
 		RedisAddr     string
 		RedisPassword string
 		RedisDB       int
+	}
+
+	SMPT struct {
+		Host     string
+		Port     int
+		Username string
+		Password string
+		Sender   string
 	}
 
 	TLS struct {
@@ -65,6 +74,13 @@ func NewConfig() (*Config, error) {
 	redisPassword := flag.String("redis_password", "", "redis password")
 	redisDB := flag.Int("redis_db", 0, "redis db")
 
+	// SMTP
+	smptHost := flag.String("smtp_host", "localhost", "smtp host")
+	smtpPort := flag.Int("smtp_port", 1025, "smtp port")
+	smtpUsername := flag.String("smtp_username", "", "smtp username")
+	smtpPassword := flag.String("smtp_password", "", "smtp password")
+	smtpSender := flag.String("smtp_sender", "", "smtp sender")
+
 	flag.Parse()
 
 	cfg := &Config{
@@ -90,6 +106,13 @@ func NewConfig() (*Config, error) {
 			JWTSecret:       *jwtSecret,
 			AccessTokenTTL:  *accessTokenTTL,
 			RefreshTokenTTL: *refreshTokenTTL,
+		},
+		SMPT: SMPT{
+			Host:     *smptHost,
+			Port:     *smtpPort,
+			Username: *smtpUsername,
+			Password: *smtpPassword,
+			Sender:   *smtpSender,
 		},
 	}
 

@@ -21,10 +21,17 @@ type server struct {
 	authv1.UnimplementedAuthServiceServer
 	authService core.AuthService
 	authConfig  core.AuthConfig
+	mailService core.MailService
+	userService core.UserService
 }
 
-func Register(gRPCServer *grpc.Server, authService core.AuthService, authConfig core.AuthConfig) {
-	authv1.RegisterAuthServiceServer(gRPCServer, &server{authService: authService, authConfig: authConfig})
+func Register(
+	gRPCServer *grpc.Server,
+	authService core.AuthService,
+	authConfig core.AuthConfig,
+	mailService core.MailService,
+	userService core.UserService) {
+	authv1.RegisterAuthServiceServer(gRPCServer, &server{authService: authService, authConfig: authConfig, mailService: mailService, userService: userService})
 }
 
 func (s *server) RefreshToken(ctx context.Context, req *authv1.RefreshTokenRequest) (*authv1.RefreshTokenResponse, error) {
@@ -59,7 +66,7 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
 
-	return &authv1.LoginResponse{AccessToken: *accessToken, RefreshToken: *refreshToken}, nil
+	return auth.ToLoginResponse(*accessToken, *refreshToken), nil
 }
 
 func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1.SignupResponse, error) {
@@ -75,11 +82,25 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 	retUser, err := s.authService.Signup(ctx, *user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrEmailAlreadyExists) || errors.Is(err, core.ErrUsernameAlreadyExists) || errors.Is(err, core.ErrAlreadyExists) {
+		if errors.Is(err, core.ErrEmailAlreadyExists) ||
+			errors.Is(err, core.ErrUsernameAlreadyExists) ||
+			errors.Is(err, core.ErrTelephoneAlreadyExists) ||
+			errors.Is(err, core.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
+
+	go func() {
+		if retUser.Email != nil {
+			if err = s.mailService.Send(ctx, *retUser); err != nil {
+				logger.Log().Error(ctx, err.Error())
+			}
+		}
+		if retUser.Telephone != nil {
+			// TODO: sms sender
+		}
+	}()
 
 	return auth.ToSignupResponse(*retUser), nil
 }
@@ -96,4 +117,43 @@ func (s *server) ValidateToken(ctx context.Context, req *authv1.ValidateTokenReq
 	}
 
 	return auth.ToValidateTokenResponse(true, *userID), nil
+}
+
+func (s *server) VerifyEmail(ctx context.Context, req *authv1.VerifyEmailRequest) (*authv1.VerifyEmailResponse, error) {
+	_, err := s.mailService.Verify(ctx, req.GetCode())
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, core.ErrConfirmationCodeNotValid) {
+			return nil, status.Error(codes.InvalidArgument, core.ErrConfirmationCodeNotValid.Error())
+		}
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
+	return &authv1.VerifyEmailResponse{}, nil
+}
+
+func (s *server) ResendEmail(ctx context.Context, req *authv1.ResendEmailRequest) (*authv1.ResendEmailResponse, error) {
+	v := validator.New()
+	model.ValidateResendEmailRequest(v, req)
+	if !v.Valid() {
+		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
+		return nil, helper.ToGRPCError(v)
+	}
+
+	user, err := s.userService.GetUserByEmail(ctx, req.GetEmail())
+	if err != nil {
+		if errors.Is(err, core.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		logger.Log().Error(ctx, err.Error())
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
+	go func() {
+		if err := s.mailService.Send(ctx, *user); err != nil {
+			logger.Log().Error(ctx, err.Error())
+		}
+	}()
+
+	return &authv1.ResendEmailResponse{}, nil
 }

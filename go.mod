@@ -10,7 +10,8 @@ require (
 require github.com/golang-jwt/jwt v3.2.2+incompatible
 
 require (
-	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.17
+	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.39
+	github.com/go-mail/mail/v2 v2.3.0
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
@@ -32,6 +33,8 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/mail.v2 v2.3.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 

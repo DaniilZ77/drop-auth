@@ -7,20 +7,34 @@ import (
 
 type (
 	User struct {
-		ID           int
-		Username     string
-		Email        string
-		PasswordHash string
-		CreatedAt    time.Time
-		UpdatedAt    time.Time
-		IsDeleted    bool
+		ID                  int
+		Username            string
+		Email               *string
+		FirstName           string
+		LastName            string
+		MiddleName          *string
+		Pseudonym           string
+		Telephone           *string
+		PasswordHash        string
+		IsEmailVerified     bool
+		IsTelephoneVerified bool
+		IsDeleted           bool
+		CreatedAt           time.Time
+		UpdatedAt           time.Time
 	}
 
 	UpdateUser struct {
-		ID       int
-		Username *string
-		Email    *string
-		Password *UpdatePassword
+		ID                  int
+		Username            *string
+		Email               *string
+		FirstName           *string
+		LastName            *string
+		MiddleName          *string
+		Pseudonym           *string
+		Telephone           *string
+		Password            *UpdatePassword
+		IsEmailVerified     *bool
+		IsTelephoneVerified *bool
 	}
 
 	UpdatePassword struct {
@@ -28,16 +42,11 @@ type (
 		NewPassword string
 	}
 
-	GetUser struct {
-		ID       *int
-		Username *string
-		Email    *string
-	}
-
 	UserService interface {
 		UpdateUser(ctx context.Context, user UpdateUser) (*User, error)
 		DeleteUser(ctx context.Context, userID int) error
 		GetUser(ctx context.Context, user User) (*User, error)
+		GetUserByEmail(ctx context.Context, email string) (*User, error)
 	}
 
 	UserStore interface {
@@ -45,7 +54,8 @@ type (
 		GetUserByUsername(ctx context.Context, username string) (user *User, err error)
 		GetUserByID(ctx context.Context, userID int) (user *User, err error)
 		GetUserByEmail(ctx context.Context, email string) (user *User, err error)
-		UpdateUser(cxt context.Context, user UpdateUser) (userID int, err error)
+		GetUserByTelephone(ctx context.Context, telephone string) (user *User, err error)
+		UpdateUser(cxt context.Context, user UpdateUser) (*User, error)
 		DeleteUser(ctx context.Context, userID int) error
 	}
 )

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
@@ -74,15 +75,30 @@ func (s *service) RefreshToken(ctx context.Context, refreshToken string) (access
 }
 
 func (s *service) Login(ctx context.Context, user core.User) (accesstoken, refreshtoken *string, err error) {
-	userFromDB, err := s.userStorage.GetUserByEmail(ctx, user.Email)
+	var userFromDB *core.User
+	if user.Email != nil {
+		userFromDB, err = s.userStorage.GetUserByEmail(ctx, *user.Email)
+	} else if user.Telephone != nil {
+		userFromDB, err = s.userStorage.GetUserByTelephone(ctx, *user.Telephone)
+	} else {
+		return nil, nil, core.ErrEmailOrTelephoneNotProvided
+	}
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, core.ErrUserNotFound) {
+			return nil, nil, core.ErrInvalidCredentials
+		}
 		return nil, nil, err
 	}
 
 	if userFromDB.IsDeleted {
 		logger.Log().Error(ctx, core.ErrAlreadyDeleted.Error())
 		return nil, nil, core.ErrAlreadyDeleted
+	}
+
+	if !userFromDB.IsEmailVerified && !userFromDB.IsTelephoneVerified {
+		logger.Log().Error(ctx, core.ErrEmailAndTelephoneNotVerified.Error())
+		return nil, nil, core.ErrEmailAndTelephoneNotVerified
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(userFromDB.PasswordHash), []byte(user.PasswordHash))

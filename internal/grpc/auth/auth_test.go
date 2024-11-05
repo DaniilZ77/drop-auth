@@ -15,8 +15,11 @@ import (
 )
 
 const (
-	email    = "alex@gmail.com"
-	password = "Qwerty123456"
+	email     = "alex@gmail.com"
+	password  = "Qwerty123456"
+	firstName = "Alex"
+	lastName  = "Ovechkin"
+	pseudonym = "Ovi"
 )
 
 func TestSignup_Success(t *testing.T) {
@@ -28,20 +31,29 @@ func TestSignup_Success(t *testing.T) {
 
 	// vars
 	username := "alex123"
+	firstName := "Alex"
+	lastName := "Ovechkin"
+	pseudonym := "Ovi"
 	user := &authv1.SignupRequest{
-		Username: username,
-		Email:    email,
-		Password: password,
+		Username:  username,
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+		Pseudonym: pseudonym,
+		Password:  password,
 	}
 	coreUser := core.User{
 		Username:     username,
-		Email:        email,
+		Email:        &[]string{email}[0],
+		FirstName:    firstName,
+		LastName:     lastName,
+		Pseudonym:    pseudonym,
 		PasswordHash: password,
 	}
 	retUser := &core.User{
 		ID:       1,
 		Username: username,
-		Email:    email,
+		Email:    &[]string{email}[0],
 	}
 
 	// mock behaviour
@@ -50,7 +62,7 @@ func TestSignup_Success(t *testing.T) {
 	res, err := client.Signup(context.Background(), user)
 	require.NoError(t, err)
 	assert.Equal(t, int64(retUser.ID), res.UserId)
-	assert.Equal(t, retUser.Email, res.Email)
+	assert.Equal(t, *retUser.Email, res.Email)
 	assert.Equal(t, retUser.Username, res.Username)
 }
 
@@ -72,25 +84,78 @@ func TestSignup_ValidationErrors(t *testing.T) {
 		{
 			name: "empty username",
 			user: &authv1.SignupRequest{
-				Username: "",
-				Email:    email,
-				Password: password,
+				Username:  "",
+				Email:     email,
+				FirstName: firstName,
+				LastName:  lastName,
+				Pseudonym: pseudonym,
+				Password:  password,
 			},
 		},
 		{
 			name: "less than 8 chars password",
 			user: &authv1.SignupRequest{
-				Username: username,
-				Email:    email,
-				Password: "123456",
+				Username:  username,
+				Email:     email,
+				FirstName: firstName,
+				LastName:  lastName,
+				Pseudonym: pseudonym,
+				Password:  "123456",
 			},
 		},
 		{
 			name: "invalid email",
 			user: &authv1.SignupRequest{
-				Username: username,
-				Email:    "alex@",
-				Password: password,
+				Username:  username,
+				Email:     "alex@",
+				FirstName: firstName,
+				LastName:  lastName,
+				Pseudonym: pseudonym,
+				Password:  password,
+			},
+		},
+		{
+			name: "empty first_name",
+			user: &authv1.SignupRequest{
+				Username:  username,
+				Email:     email,
+				FirstName: "",
+				LastName:  lastName,
+				Pseudonym: pseudonym,
+				Password:  password,
+			},
+		},
+		{
+			name: "empty last_name",
+			user: &authv1.SignupRequest{
+				Username:  username,
+				Email:     email,
+				FirstName: firstName,
+				LastName:  "",
+				Pseudonym: pseudonym,
+				Password:  password,
+			},
+		},
+		{
+			name: "empty pseudonym",
+			user: &authv1.SignupRequest{
+				Username:  username,
+				Email:     email,
+				FirstName: firstName,
+				LastName:  lastName,
+				Pseudonym: "",
+				Password:  password,
+			},
+		},
+		{
+			name: "invalid telephone",
+			user: &authv1.SignupRequest{
+				Username:  username,
+				Telephone: "-79321900016",
+				FirstName: firstName,
+				LastName:  lastName,
+				Pseudonym: pseudonym,
+				Password:  password,
 			},
 		},
 	}
@@ -112,9 +177,12 @@ func TestSignup_SignupError(t *testing.T) {
 
 	// vars
 	user := &authv1.SignupRequest{
-		Username: "alex123",
-		Email:    email,
-		Password: password,
+		Username:  "alex123",
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+		Pseudonym: pseudonym,
+		Password:  password,
 	}
 
 	tests := []struct {
@@ -160,7 +228,7 @@ func TestLogin_Success(t *testing.T) {
 		Password: password,
 	}
 	coreUser := core.User{
-		Email:        email,
+		Email:        &[]string{email}[0],
 		PasswordHash: password,
 	}
 	accessToken, refreshToken := "access_token", "refresh_token"

@@ -244,6 +244,65 @@ func (_c *MockUserStore_GetUserByID_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// GetUserByTelephone provides a mock function with given fields: ctx, telephone
+func (_m *MockUserStore) GetUserByTelephone(ctx context.Context, telephone string) (*core.User, error) {
+	ret := _m.Called(ctx, telephone)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserByTelephone")
+	}
+
+	var r0 *core.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*core.User, error)); ok {
+		return rf(ctx, telephone)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.User); ok {
+		r0 = rf(ctx, telephone)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, telephone)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockUserStore_GetUserByTelephone_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserByTelephone'
+type MockUserStore_GetUserByTelephone_Call struct {
+	*mock.Call
+}
+
+// GetUserByTelephone is a helper method to define mock.On call
+//   - ctx context.Context
+//   - telephone string
+func (_e *MockUserStore_Expecter) GetUserByTelephone(ctx interface{}, telephone interface{}) *MockUserStore_GetUserByTelephone_Call {
+	return &MockUserStore_GetUserByTelephone_Call{Call: _e.mock.On("GetUserByTelephone", ctx, telephone)}
+}
+
+func (_c *MockUserStore_GetUserByTelephone_Call) Run(run func(ctx context.Context, telephone string)) *MockUserStore_GetUserByTelephone_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockUserStore_GetUserByTelephone_Call) Return(user *core.User, err error) *MockUserStore_GetUserByTelephone_Call {
+	_c.Call.Return(user, err)
+	return _c
+}
+
+func (_c *MockUserStore_GetUserByTelephone_Call) RunAndReturn(run func(context.Context, string) (*core.User, error)) *MockUserStore_GetUserByTelephone_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetUserByUsername provides a mock function with given fields: ctx, username
 func (_m *MockUserStore) GetUserByUsername(ctx context.Context, username string) (*core.User, error) {
 	ret := _m.Called(ctx, username)
@@ -304,22 +363,24 @@ func (_c *MockUserStore_GetUserByUsername_Call) RunAndReturn(run func(context.Co
 }
 
 // UpdateUser provides a mock function with given fields: cxt, user
-func (_m *MockUserStore) UpdateUser(cxt context.Context, user core.UpdateUser) (int, error) {
+func (_m *MockUserStore) UpdateUser(cxt context.Context, user core.UpdateUser) (*core.User, error) {
 	ret := _m.Called(cxt, user)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateUser")
 	}
 
-	var r0 int
+	var r0 *core.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser) (int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser) (*core.User, error)); ok {
 		return rf(cxt, user)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser) int); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser) *core.User); ok {
 		r0 = rf(cxt, user)
 	} else {
-		r0 = ret.Get(0).(int)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.User)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, core.UpdateUser) error); ok {
@@ -350,12 +411,12 @@ func (_c *MockUserStore_UpdateUser_Call) Run(run func(cxt context.Context, user 
 	return _c
 }
 
-func (_c *MockUserStore_UpdateUser_Call) Return(userID int, err error) *MockUserStore_UpdateUser_Call {
-	_c.Call.Return(userID, err)
+func (_c *MockUserStore_UpdateUser_Call) Return(_a0 *core.User, _a1 error) *MockUserStore_UpdateUser_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockUserStore_UpdateUser_Call) RunAndReturn(run func(context.Context, core.UpdateUser) (int, error)) *MockUserStore_UpdateUser_Call {
+func (_c *MockUserStore_UpdateUser_Call) RunAndReturn(run func(context.Context, core.UpdateUser) (*core.User, error)) *MockUserStore_UpdateUser_Call {
 	_c.Call.Return(run)
 	return _c
 }
