@@ -1,4 +1,4 @@
-package confirmationcode
+package verificationcode
 
 import (
 	"context"
@@ -13,28 +13,28 @@ type storage struct {
 	*redis.Redis
 }
 
-func New(rdb *redis.Redis) core.ConfirmationCodeStore {
+func New(rdb *redis.Redis) core.VerificationCodeStore {
 	return &storage{rdb}
 }
 
-func (s *storage) DeleteConfirmationCode(ctx context.Context, code string) error {
+func (s *storage) DeleteVerificationCode(ctx context.Context, key string) error {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	if err := s.Client.Del(ctx, code).Err(); err != nil {
+	if err := s.Client.Del(ctx, key).Err(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *storage) GetConfirmationCode(ctx context.Context, code string) (int, error) {
+func (s *storage) GetVerificationCode(ctx context.Context, key string) (int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	userID, err := s.Client.Get(ctx, code).Int()
+	userID, err := s.Client.Get(ctx, key).Int()
 	if err == rdb.Nil {
-		return 0, core.ErrConfirmationCodeNotValid
+		return 0, core.ErrVerificationCodeNotValid
 	} else if err != nil {
 		return 0, err
 	}
@@ -42,11 +42,11 @@ func (s *storage) GetConfirmationCode(ctx context.Context, code string) (int, er
 	return userID, nil
 }
 
-func (s *storage) SetConfirmationCode(ctx context.Context, userID int, code string, expiresIn time.Duration) error {
+func (s *storage) SetVerificationCode(ctx context.Context, key string, val string, expiresIn time.Duration) error {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	if err := s.Client.Set(ctx, code, userID, expiresIn).Err(); err != nil {
+	if err := s.Client.Set(ctx, key, val, expiresIn).Err(); err != nil {
 		return err
 	}
 

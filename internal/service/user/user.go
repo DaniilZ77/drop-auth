@@ -53,6 +53,14 @@ func (s *service) UpdateUser(ctx context.Context, user core.UpdateUser) (*core.U
 		}
 	}
 
+	isVerified := false
+	if user.Email != nil {
+		user.IsEmailVerified = &isVerified
+	}
+	if user.Telephone != nil {
+		user.IsTelephoneVerified = &isVerified
+	}
+
 	retUser, err := s.userStorage.UpdateUser(ctx, user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
@@ -64,16 +72,6 @@ func (s *service) UpdateUser(ctx context.Context, user core.UpdateUser) (*core.U
 
 func (s *service) GetUser(ctx context.Context, user core.User) (*core.User, error) {
 	retUser, err := s.userStorage.GetUserByID(ctx, user.ID)
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, err
-	}
-
-	return retUser, nil
-}
-
-func (s *service) GetUserByEmail(ctx context.Context, email string) (*core.User, error) {
-	retUser, err := s.userStorage.GetUserByEmail(ctx, email)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return nil, err

@@ -26,11 +26,11 @@ type App struct {
 
 func New(
 	ctx context.Context,
+	cfg *config.Config,
 	authService core.AuthService,
 	userService core.UserService,
 	authConfig core.AuthConfig,
 	mailService core.MailService,
-	cfg *config.Config,
 ) *App {
 	// Methods that require authentication
 	requireAuth := map[string]bool{

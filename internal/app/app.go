@@ -13,8 +13,8 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/mail"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/user"
 	userstore "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres/user"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/confirmationcode"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/refreshtoken"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/verificationcode"
 )
 
 type App struct {
@@ -50,7 +50,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	// Store
 	userStore := userstore.New(pg)
 	refreshTokenStore := refreshtoken.New(rdb)
-	confirmationCodeStore := confirmationcode.New(rdb)
+	verificationCodeStore := verificationcode.New(rdb)
 
 	// Service
 	authService := auth.New(userStore, refreshTokenStore, authConfig)
@@ -61,18 +61,19 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		cfg.SMPT.Username,
 		cfg.SMPT.Password,
 		cfg.SMPT.Sender,
-		confirmationCodeStore,
+		verificationCodeStore,
 		userStore,
 	)
 
 	// gRPC server
 	gRPCApp := grpcapp.New(
 		ctx,
+		cfg,
 		authService,
 		userService,
 		authConfig,
 		mailService,
-		cfg)
+	)
 
 	// HTTP server
 	httpServer := httpapp.New(ctx, cfg)

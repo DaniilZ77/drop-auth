@@ -62,7 +62,7 @@ func ValidateGetUserRequest(v *validator.Validator, req *userv1.GetUserRequest) 
 	v.Check(req.GetUserId() > 0, "user_id", "must be positive")
 }
 
-func ValidateResendEmailRequest(v *validator.Validator, req *authv1.ResendEmailRequest) {
+func ValidateResendEmailRequest(v *validator.Validator, req *authv1.SendEmailRequest) {
 	validateEmail(v, req.GetEmail())
 }
 

@@ -18,14 +18,16 @@ func ToSignupResponse(user core.User) *authv1.SignupResponse {
 	}
 
 	return &authv1.SignupResponse{
-		UserId:     int64(user.ID),
-		Username:   user.Username,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		MiddleName: middleName,
-		Telephone:  telephone,
-		Email:      email,
-		Pseudonym:  user.Pseudonym,
+		UserId:              int64(user.ID),
+		Username:            user.Username,
+		FirstName:           user.FirstName,
+		LastName:            user.LastName,
+		MiddleName:          middleName,
+		Telephone:           telephone,
+		Email:               email,
+		Pseudonym:           user.Pseudonym,
+		IsEmailVerified:     user.IsEmailVerified,
+		IsTelephoneVerified: user.IsTelephoneVerified,
 	}
 }
 

@@ -53,14 +53,14 @@
         ]
       }
     },
-    "/v1/auth/email/{email}/resend": {
+    "/v1/auth/email/{email}/send": {
       "get": {
-        "operationId": "AuthService_ResendEmail",
+        "operationId": "AuthService_SendEmail",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/authResendEmailResponse"
+              "$ref": "#/definitions/authSendEmailResponse"
             }
           },
           "default": {
@@ -255,7 +255,7 @@
         }
       }
     },
-    "authResendEmailResponse": {
+    "authSendEmailResponse": {
       "type": "object"
     },
     "authSignupRequest": {
@@ -314,6 +314,12 @@
         },
         "pseudonym": {
           "type": "string"
+        },
+        "isEmailVerified": {
+          "type": "boolean"
+        },
+        "isTelephoneVerified": {
+          "type": "boolean"
         }
       }
     },

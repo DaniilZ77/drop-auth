@@ -46,7 +46,6 @@ type (
 		UpdateUser(ctx context.Context, user UpdateUser) (*User, error)
 		DeleteUser(ctx context.Context, userID int) error
 		GetUser(ctx context.Context, user User) (*User, error)
-		GetUserByEmail(ctx context.Context, email string) (*User, error)
 	}
 
 	UserStore interface {

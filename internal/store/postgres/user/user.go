@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
 	constraints "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres"
 	"github.com/jackc/pgerrcode"
@@ -62,6 +63,7 @@ func (s *store) GetUserByEmail(ctx context.Context, email string) (user *core.Us
 		&user.IsTelephoneVerified,
 	)
 	if err != nil {
+		logger.Log().Debug(ctx, err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrUserNotFound
 		}
@@ -112,6 +114,7 @@ func (s *store) GetUserByTelephone(ctx context.Context, telephone string) (user 
 		&user.IsTelephoneVerified,
 	)
 	if err != nil {
+		logger.Log().Debug(ctx, err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrUserNotFound
 		}
@@ -162,6 +165,7 @@ func (s *store) GetUserByUsername(ctx context.Context, username string) (user *c
 		&user.IsTelephoneVerified,
 	)
 	if err != nil {
+		logger.Log().Debug(ctx, err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrUserNotFound
 		}
@@ -212,6 +216,7 @@ func (s *store) GetUserByID(ctx context.Context, userID int) (user *core.User, e
 		&user.IsTelephoneVerified,
 	)
 	if err != nil {
+		logger.Log().Debug(ctx, err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrUserNotFound
 		}
@@ -249,14 +254,15 @@ func (s *store) AddUser(ctx context.Context, user core.User) (userID int, err er
 		user.PasswordHash,
 	).Scan(&userID)
 	if err != nil {
+		logger.Log().Debug(ctx, err.Error())
 		var pg *pgconn.PgError
 		if ok := errors.As(err, &pg); ok && pg.Code == pgerrcode.UniqueViolation {
-			switch {
-			case pg.ConstraintName == constraints.UniqueUsernameConstraint:
+			switch pg.ConstraintName {
+			case constraints.UniqueUsernameConstraint:
 				return 0, core.ErrUsernameAlreadyExists
-			case pg.ConstraintName == constraints.UniqueEmailConstraint:
+			case constraints.UniqueEmailConstraint:
 				return 0, core.ErrEmailAlreadyExists
-			case pg.ConstraintName == constraints.UniqueTelephoneConstraint:
+			case constraints.UniqueTelephoneConstraint:
 				return 0, core.ErrTelephoneAlreadyExists
 			default:
 				return 0, core.ErrAlreadyExists
@@ -337,14 +343,15 @@ func (s *store) UpdateUser(ctx context.Context, user core.UpdateUser) (retUser *
 		&retUser.UpdatedAt,
 	)
 	if err != nil {
+		logger.Log().Debug(ctx, err.Error())
 		var pg *pgconn.PgError
 		if ok := errors.As(err, &pg); ok && pg.Code == pgerrcode.UniqueViolation {
-			switch {
-			case pg.ConstraintName == constraints.UniqueUsernameConstraint:
+			switch pg.ConstraintName {
+			case constraints.UniqueUsernameConstraint:
 				return nil, core.ErrUsernameAlreadyExists
-			case pg.ConstraintName == constraints.UniqueEmailConstraint:
+			case constraints.UniqueEmailConstraint:
 				return nil, core.ErrEmailAlreadyExists
-			case pg.ConstraintName == constraints.UniqueTelephoneConstraint:
+			case constraints.UniqueTelephoneConstraint:
 				return nil, core.ErrTelephoneAlreadyExists
 			default:
 				return nil, core.ErrAlreadyExists

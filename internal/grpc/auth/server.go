@@ -30,7 +30,8 @@ func Register(
 	authService core.AuthService,
 	authConfig core.AuthConfig,
 	mailService core.MailService,
-	userService core.UserService) {
+	userService core.UserService,
+) {
 	authv1.RegisterAuthServiceServer(gRPCServer, &server{authService: authService, authConfig: authConfig, mailService: mailService, userService: userService})
 }
 
@@ -60,7 +61,10 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 	accessToken, refreshToken, err := s.authService.Login(ctx, *user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrInvalidCredentials) || errors.Is(err, core.ErrUserNotFound) || errors.Is(err, core.ErrAlreadyDeleted) {
+		if errors.Is(err, core.ErrInvalidCredentials) ||
+			errors.Is(err, core.ErrUserNotFound) ||
+			errors.Is(err, core.ErrAlreadyDeleted) ||
+			errors.Is(err, core.ErrEmailAndTelephoneNotVerified) {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
@@ -92,14 +96,11 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 	}
 
 	go func() {
-		if retUser.Email != nil {
-			if err = s.mailService.Send(ctx, *retUser); err != nil {
-				logger.Log().Error(ctx, err.Error())
-			}
+		ctx := context.Background()
+		if err = s.mailService.Send(ctx, *retUser); err != nil {
+			logger.Log().Error(ctx, err.Error())
 		}
-		if retUser.Telephone != nil {
-			// TODO: sms sender
-		}
+		// TODO: sms sender
 	}()
 
 	return auth.ToSignupResponse(*retUser), nil
@@ -123,8 +124,8 @@ func (s *server) VerifyEmail(ctx context.Context, req *authv1.VerifyEmailRequest
 	_, err := s.mailService.Verify(ctx, req.GetCode())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrConfirmationCodeNotValid) {
-			return nil, status.Error(codes.InvalidArgument, core.ErrConfirmationCodeNotValid.Error())
+		if errors.Is(err, core.ErrVerificationCodeNotValid) {
+			return nil, status.Error(codes.InvalidArgument, core.ErrVerificationCodeNotValid.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
@@ -132,7 +133,7 @@ func (s *server) VerifyEmail(ctx context.Context, req *authv1.VerifyEmailRequest
 	return &authv1.VerifyEmailResponse{}, nil
 }
 
-func (s *server) ResendEmail(ctx context.Context, req *authv1.ResendEmailRequest) (*authv1.ResendEmailResponse, error) {
+func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*authv1.SendEmailResponse, error) {
 	v := validator.New()
 	model.ValidateResendEmailRequest(v, req)
 	if !v.Valid() {
@@ -140,20 +141,12 @@ func (s *server) ResendEmail(ctx context.Context, req *authv1.ResendEmailRequest
 		return nil, helper.ToGRPCError(v)
 	}
 
-	user, err := s.userService.GetUserByEmail(ctx, req.GetEmail())
-	if err != nil {
-		if errors.Is(err, core.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-		logger.Log().Error(ctx, err.Error())
-		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
-	}
-
 	go func() {
-		if err := s.mailService.Send(ctx, *user); err != nil {
+		ctx := context.Background()
+		if err := s.mailService.Resend(ctx, req.GetEmail()); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()
 
-	return &authv1.ResendEmailResponse{}, nil
+	return &authv1.SendEmailResponse{}, nil
 }

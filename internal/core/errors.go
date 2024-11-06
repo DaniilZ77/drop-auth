@@ -17,7 +17,7 @@ var (
 	ErrAlreadyExists                = errors.New("already exists")
 	ErrTelephoneAlreadyExists       = errors.New("telephone already exists")
 	ErrEmailOrTelephoneNotProvided  = errors.New("email or telephone should be provided")
-	ErrConfirmationCodeNotValid     = errors.New("confirmation code not valid")
+	ErrVerificationCodeNotValid     = errors.New("verification code not valid")
 	ErrEmailNotProvided             = errors.New("email is not provided")
 	ErrEmailAndTelephoneNotVerified = errors.New("email and telephone not verified")
 

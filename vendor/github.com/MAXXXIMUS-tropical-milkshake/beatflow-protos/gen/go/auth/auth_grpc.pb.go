@@ -24,7 +24,7 @@ const (
 	AuthService_RefreshToken_FullMethodName  = "/auth.AuthService/RefreshToken"
 	AuthService_ValidateToken_FullMethodName = "/auth.AuthService/ValidateToken"
 	AuthService_VerifyEmail_FullMethodName   = "/auth.AuthService/VerifyEmail"
-	AuthService_ResendEmail_FullMethodName   = "/auth.AuthService/ResendEmail"
+	AuthService_SendEmail_FullMethodName     = "/auth.AuthService/SendEmail"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -36,7 +36,7 @@ type AuthServiceClient interface {
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error)
 	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error)
-	ResendEmail(ctx context.Context, in *ResendEmailRequest, opts ...grpc.CallOption) (*ResendEmailResponse, error)
+	SendEmail(ctx context.Context, in *SendEmailRequest, opts ...grpc.CallOption) (*SendEmailResponse, error)
 }
 
 type authServiceClient struct {
@@ -97,10 +97,10 @@ func (c *authServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequ
 	return out, nil
 }
 
-func (c *authServiceClient) ResendEmail(ctx context.Context, in *ResendEmailRequest, opts ...grpc.CallOption) (*ResendEmailResponse, error) {
+func (c *authServiceClient) SendEmail(ctx context.Context, in *SendEmailRequest, opts ...grpc.CallOption) (*SendEmailResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ResendEmailResponse)
-	err := c.cc.Invoke(ctx, AuthService_ResendEmail_FullMethodName, in, out, cOpts...)
+	out := new(SendEmailResponse)
+	err := c.cc.Invoke(ctx, AuthService_SendEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ type AuthServiceServer interface {
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error)
 	VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error)
-	ResendEmail(context.Context, *ResendEmailRequest) (*ResendEmailResponse, error)
+	SendEmail(context.Context, *SendEmailRequest) (*SendEmailResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -142,8 +142,8 @@ func (UnimplementedAuthServiceServer) ValidateToken(context.Context, *ValidateTo
 func (UnimplementedAuthServiceServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyEmail not implemented")
 }
-func (UnimplementedAuthServiceServer) ResendEmail(context.Context, *ResendEmailRequest) (*ResendEmailResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ResendEmail not implemented")
+func (UnimplementedAuthServiceServer) SendEmail(context.Context, *SendEmailRequest) (*SendEmailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendEmail not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -256,20 +256,20 @@ func _AuthService_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_ResendEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResendEmailRequest)
+func _AuthService_SendEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendEmailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).ResendEmail(ctx, in)
+		return srv.(AuthServiceServer).SendEmail(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_ResendEmail_FullMethodName,
+		FullMethod: AuthService_SendEmail_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).ResendEmail(ctx, req.(*ResendEmailRequest))
+		return srv.(AuthServiceServer).SendEmail(ctx, req.(*SendEmailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -302,8 +302,8 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_VerifyEmail_Handler,
 		},
 		{
-			MethodName: "ResendEmail",
-			Handler:    _AuthService_ResendEmail_Handler,
+			MethodName: "SendEmail",
+			Handler:    _AuthService_SendEmail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
