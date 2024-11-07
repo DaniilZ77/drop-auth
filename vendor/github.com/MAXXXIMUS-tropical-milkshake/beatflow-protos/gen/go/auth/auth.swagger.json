@@ -147,6 +147,68 @@
         ]
       }
     },
+    "/v1/auth/telephone/verify": {
+      "post": {
+        "operationId": "AuthService_VerifyTelephone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/authVerifyTelephoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/authVerifyTelephoneRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/v1/auth/telephone/{telephone}/send": {
+      "get": {
+        "operationId": "AuthService_SendTelephone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/authSendTelephoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "telephone",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
     "/v1/auth/token/refresh": {
       "post": {
         "operationId": "AuthService_RefreshToken",
@@ -258,6 +320,9 @@
     "authSendEmailResponse": {
       "type": "object"
     },
+    "authSendTelephoneResponse": {
+      "type": "object"
+    },
     "authSignupRequest": {
       "type": "object",
       "properties": {
@@ -344,6 +409,17 @@
       }
     },
     "authVerifyEmailResponse": {
+      "type": "object"
+    },
+    "authVerifyTelephoneRequest": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        }
+      }
+    },
+    "authVerifyTelephoneResponse": {
       "type": "object"
     },
     "protobufAny": {

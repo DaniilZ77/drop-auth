@@ -1,4 +1,4 @@
-# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.41
+# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.43
 ## explicit; go 1.23.1
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user

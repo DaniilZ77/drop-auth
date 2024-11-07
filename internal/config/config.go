@@ -14,6 +14,7 @@ type (
 		TLS
 		Auth
 		SMPT
+		SMS
 	}
 
 	HTTP struct {
@@ -39,6 +40,10 @@ type (
 		Username string
 		Password string
 		Sender   string
+	}
+
+	SMS struct {
+		Sender string
 	}
 
 	TLS struct {
@@ -81,6 +86,9 @@ func NewConfig() (*Config, error) {
 	smtpPassword := flag.String("smtp_password", "", "smtp password")
 	smtpSender := flag.String("smtp_sender", "", "smtp sender")
 
+	// SMTP
+	smsSender := flag.String("sms_sender", "", "sms sender")
+
 	flag.Parse()
 
 	cfg := &Config{
@@ -113,6 +121,9 @@ func NewConfig() (*Config, error) {
 			Username: *smtpUsername,
 			Password: *smtpPassword,
 			Sender:   *smtpSender,
+		},
+		SMS: SMS{
+			Sender: *smsSender,
 		},
 	}
 

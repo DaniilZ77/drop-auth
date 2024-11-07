@@ -19,6 +19,7 @@ var (
 	ErrEmailOrTelephoneNotProvided  = errors.New("email or telephone should be provided")
 	ErrVerificationCodeNotValid     = errors.New("verification code not valid")
 	ErrEmailNotProvided             = errors.New("email is not provided")
+	ErrTelephoneNotProvided         = errors.New("telephone is not provided")
 	ErrEmailAndTelephoneNotVerified = errors.New("email and telephone not verified")
 
 	// validation

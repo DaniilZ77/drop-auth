@@ -31,6 +31,7 @@ func New(
 	userService core.UserService,
 	authConfig core.AuthConfig,
 	mailService core.MailService,
+	smsService core.SMSService,
 ) *App {
 	// Methods that require authentication
 	requireAuth := map[string]bool{
@@ -80,7 +81,7 @@ func New(
 	gRPCServer := grpc.NewServer(opts...)
 
 	// Register services
-	auth.Register(gRPCServer, authService, authConfig, mailService, userService)
+	auth.Register(gRPCServer, authService, authConfig, mailService, userService, smsService)
 	user.Register(gRPCServer, userService)
 
 	return &App{

@@ -19,7 +19,7 @@ func setCodeAndSendMail(
 	user core.User,
 ) error {
 	if user.Email == nil {
-		logger.Log().Error(ctx, "email is nil")
+		logger.Log().Debug(ctx, "email is nil")
 		return core.ErrEmailNotProvided
 	}
 

@@ -62,8 +62,12 @@ func ValidateGetUserRequest(v *validator.Validator, req *userv1.GetUserRequest) 
 	v.Check(req.GetUserId() > 0, "user_id", "must be positive")
 }
 
-func ValidateResendEmailRequest(v *validator.Validator, req *authv1.SendEmailRequest) {
+func ValidateSendEmailRequest(v *validator.Validator, req *authv1.SendEmailRequest) {
 	validateEmail(v, req.GetEmail())
+}
+
+func ValidateSendTelephonelRequest(v *validator.Validator, req *authv1.SendTelephoneRequest) {
+	validatePhone(v, req.GetTelephone())
 }
 
 func validateName(v *validator.Validator, key string, name string) {

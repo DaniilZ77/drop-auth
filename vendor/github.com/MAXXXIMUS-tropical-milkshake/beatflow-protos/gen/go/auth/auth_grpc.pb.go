@@ -19,12 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Login_FullMethodName         = "/auth.AuthService/Login"
-	AuthService_Signup_FullMethodName        = "/auth.AuthService/Signup"
-	AuthService_RefreshToken_FullMethodName  = "/auth.AuthService/RefreshToken"
-	AuthService_ValidateToken_FullMethodName = "/auth.AuthService/ValidateToken"
-	AuthService_VerifyEmail_FullMethodName   = "/auth.AuthService/VerifyEmail"
-	AuthService_SendEmail_FullMethodName     = "/auth.AuthService/SendEmail"
+	AuthService_Login_FullMethodName           = "/auth.AuthService/Login"
+	AuthService_Signup_FullMethodName          = "/auth.AuthService/Signup"
+	AuthService_RefreshToken_FullMethodName    = "/auth.AuthService/RefreshToken"
+	AuthService_ValidateToken_FullMethodName   = "/auth.AuthService/ValidateToken"
+	AuthService_VerifyEmail_FullMethodName     = "/auth.AuthService/VerifyEmail"
+	AuthService_SendEmail_FullMethodName       = "/auth.AuthService/SendEmail"
+	AuthService_VerifyTelephone_FullMethodName = "/auth.AuthService/VerifyTelephone"
+	AuthService_SendTelephone_FullMethodName   = "/auth.AuthService/SendTelephone"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -37,6 +39,8 @@ type AuthServiceClient interface {
 	ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error)
 	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error)
 	SendEmail(ctx context.Context, in *SendEmailRequest, opts ...grpc.CallOption) (*SendEmailResponse, error)
+	VerifyTelephone(ctx context.Context, in *VerifyTelephoneRequest, opts ...grpc.CallOption) (*VerifyTelephoneResponse, error)
+	SendTelephone(ctx context.Context, in *SendTelephoneRequest, opts ...grpc.CallOption) (*SendTelephoneResponse, error)
 }
 
 type authServiceClient struct {
@@ -107,6 +111,26 @@ func (c *authServiceClient) SendEmail(ctx context.Context, in *SendEmailRequest,
 	return out, nil
 }
 
+func (c *authServiceClient) VerifyTelephone(ctx context.Context, in *VerifyTelephoneRequest, opts ...grpc.CallOption) (*VerifyTelephoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyTelephoneResponse)
+	err := c.cc.Invoke(ctx, AuthService_VerifyTelephone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) SendTelephone(ctx context.Context, in *SendTelephoneRequest, opts ...grpc.CallOption) (*SendTelephoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendTelephoneResponse)
+	err := c.cc.Invoke(ctx, AuthService_SendTelephone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -117,6 +141,8 @@ type AuthServiceServer interface {
 	ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error)
 	VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error)
 	SendEmail(context.Context, *SendEmailRequest) (*SendEmailResponse, error)
+	VerifyTelephone(context.Context, *VerifyTelephoneRequest) (*VerifyTelephoneResponse, error)
+	SendTelephone(context.Context, *SendTelephoneRequest) (*SendTelephoneResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -144,6 +170,12 @@ func (UnimplementedAuthServiceServer) VerifyEmail(context.Context, *VerifyEmailR
 }
 func (UnimplementedAuthServiceServer) SendEmail(context.Context, *SendEmailRequest) (*SendEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendEmail not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyTelephone(context.Context, *VerifyTelephoneRequest) (*VerifyTelephoneResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyTelephone not implemented")
+}
+func (UnimplementedAuthServiceServer) SendTelephone(context.Context, *SendTelephoneRequest) (*SendTelephoneResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendTelephone not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -274,6 +306,42 @@ func _AuthService_SendEmail_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_VerifyTelephone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyTelephoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyTelephone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_VerifyTelephone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyTelephone(ctx, req.(*VerifyTelephoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_SendTelephone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendTelephoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SendTelephone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_SendTelephone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SendTelephone(ctx, req.(*SendTelephoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +372,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendEmail",
 			Handler:    _AuthService_SendEmail_Handler,
+		},
+		{
+			MethodName: "VerifyTelephone",
+			Handler:    _AuthService_VerifyTelephone_Handler,
+		},
+		{
+			MethodName: "SendTelephone",
+			Handler:    _AuthService_SendTelephone_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

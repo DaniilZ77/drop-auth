@@ -58,6 +58,11 @@ func (s *service) RefreshToken(ctx context.Context, refreshToken string) (access
 		return nil, nil, core.ErrAlreadyDeleted
 	}
 
+	if !userFromDB.IsEmailVerified && !userFromDB.IsTelephoneVerified {
+		logger.Log().Error(ctx, core.ErrEmailAndTelephoneNotVerified.Error())
+		return nil, nil, core.ErrEmailAndTelephoneNotVerified
+	}
+
 	accessToken, err := jwt.GenerateToken(userFromDB.ID, s.authConfig)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())

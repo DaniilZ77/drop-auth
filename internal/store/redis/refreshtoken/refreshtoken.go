@@ -2,7 +2,6 @@ package refreshtoken
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
@@ -38,8 +37,6 @@ func (s *store) GetRefreshToken(ctx context.Context, tokenID string) (int, error
 func (s *store) DeleteRefreshToken(ctx context.Context, prevTokenID string) error {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
-
-	fmt.Println(prevTokenID)
 
 	deleted, err := s.Redis.Del(ctx, prevTokenID).Result()
 	if deleted == 0 {

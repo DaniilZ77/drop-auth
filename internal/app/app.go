@@ -11,6 +11,7 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/auth"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/mail"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/sms"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/user"
 	userstore "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres/user"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/refreshtoken"
@@ -64,6 +65,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		verificationCodeStore,
 		userStore,
 	)
+	smsService := sms.New(cfg.SMS.Sender, verificationCodeStore, userStore)
 
 	// gRPC server
 	gRPCApp := grpcapp.New(
@@ -73,6 +75,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		userService,
 		authConfig,
 		mailService,
+		smsService,
 	)
 
 	// HTTP server
