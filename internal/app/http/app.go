@@ -12,7 +12,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type App struct {
@@ -22,12 +22,12 @@ type App struct {
 }
 
 func New(ctx context.Context, cfg *config.Config) *App {
-	creds, err := credentials.NewClientTLSFromFile(cfg.Cert, "")
-	if err != nil {
-		logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
-	}
+	// creds, err := credentials.NewClientTLSFromFile(cfg.Cert, "")
+	// if err != nil {
+	// 	logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
+	// }
 
-	conn, err := grpc.NewClient(cfg.GRPCPort, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient(cfg.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Log().Fatal(ctx, "failed to dial server:", err)
 	}
