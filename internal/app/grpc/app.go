@@ -15,7 +15,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -70,12 +70,12 @@ func New(
 	))
 
 	// TLS
-	creds, err := credentials.NewServerTLSFromFile(cfg.Cert, cfg.Key)
-	if err != nil {
-		logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
-	}
+	// creds, err := credentials.NewServerTLSFromFile(cfg.Cert, cfg.Key)
+	// if err != nil {
+	// 	logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
+	// }
 
-	opts = append(opts, grpc.Creds(creds))
+	opts = append(opts, grpc.Creds(insecure.NewCredentials()))
 
 	// Create gRPC server
 	gRPCServer := grpc.NewServer(opts...)
