@@ -101,6 +101,12 @@ func (s *service) Login(ctx context.Context, user core.User) (accesstoken, refre
 		return nil, nil, core.ErrAlreadyDeleted
 	}
 
+	if user.Telephone != nil && *user.Telephone != *userFromDB.Telephone ||
+		user.Email != nil && *user.Email != *userFromDB.Email {
+		logger.Log().Error(ctx, core.ErrInvalidCredentials.Error())
+		return nil, nil, core.ErrInvalidCredentials
+	}
+
 	if !userFromDB.IsEmailVerified && user.Email != nil {
 		logger.Log().Error(ctx, core.ErrEmailNotVerified.Error())
 		return nil, nil, core.ErrEmailNotVerified

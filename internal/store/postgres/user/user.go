@@ -368,6 +368,8 @@ func (s *store) DeleteUser(ctx context.Context, userID int) error {
 	defer cancel()
 
 	stmt := `UPDATE users SET
+	email = null,
+	telephone = null,
 	is_deleted = true
 	WHERE id = $1`
 

@@ -86,7 +86,7 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 					core.KeyEmailOrTelephoneNotVerified: "code to verify email or telephone is sent",
 				},
 			)
-		} else if helper.OneOf(err, core.ErrInvalidCredentials, core.ErrUserNotFound, core.ErrAlreadyExists) {
+		} else if helper.OneOf(err, core.ErrInvalidCredentials, core.ErrUserNotFound, core.ErrAlreadyExists, core.ErrAlreadyDeleted) {
 			return nil, helper.WithDetails(
 				codes.Unauthenticated,
 				core.ErrInvalidCredentials,
