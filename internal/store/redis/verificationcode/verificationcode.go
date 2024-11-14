@@ -13,7 +13,7 @@ type storage struct {
 	*redis.Redis
 }
 
-func New(rdb *redis.Redis) core.VerificationCodeStore {
+func New(rdb *redis.Redis) core.VerificationStore {
 	return &storage{rdb}
 }
 
@@ -28,15 +28,15 @@ func (s *storage) DeleteVerificationCode(ctx context.Context, key string) error 
 	return nil
 }
 
-func (s *storage) GetVerificationCode(ctx context.Context, key string) (int, error) {
+func (s *storage) GetVerificationCode(ctx context.Context, key string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	userID, err := s.Client.Get(ctx, key).Int()
+	userID, err := s.Client.Get(ctx, key).Result()
 	if err == rdb.Nil {
-		return 0, core.ErrVerificationCodeNotValid
+		return "", core.ErrVerificationCodeNotValid
 	} else if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	return userID, nil

@@ -16,12 +16,19 @@ var (
 	ErrAlreadyDeleted               = errors.New("already deleted")
 	ErrAlreadyExists                = errors.New("already exists")
 	ErrTelephoneAlreadyExists       = errors.New("telephone already exists")
-	ErrEmailOrTelephoneNotProvided  = errors.New("email or telephone should be provided")
+	ErrEmailAndTelephoneNotProvided = errors.New("email and telephone should be provided")
 	ErrVerificationCodeNotValid     = errors.New("verification code not valid")
 	ErrEmailNotProvided             = errors.New("email is not provided")
 	ErrTelephoneNotProvided         = errors.New("telephone is not provided")
-	ErrEmailAndTelephoneNotVerified = errors.New("email and telephone not verified")
+	ErrEmailOrTelephoneNotVerified  = errors.New("email or telephone not verified")
+	ErrEmailNotVerified             = errors.New("email not verified")
+	ErrTelephoneNotVerified         = errors.New("telephone not verified")
 
 	// validation
 	ErrValidationFailed = errors.New("validation failed")
+)
+
+const (
+	KeyEmailOrTelephoneNotVerified = "EMAIL_OR_TELEPHONE_NOT_VERIFIED"
+	KeyInvalidCredentials          = "INVALID_CREDENTIALS"
 )

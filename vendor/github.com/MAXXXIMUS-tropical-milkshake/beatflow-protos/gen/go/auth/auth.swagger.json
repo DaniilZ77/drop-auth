@@ -21,38 +21,6 @@
     "application/json"
   ],
   "paths": {
-    "/v1/auth/email/verify": {
-      "post": {
-        "operationId": "AuthService_VerifyEmail",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/authVerifyEmailResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/authVerifyEmailRequest"
-            }
-          }
-        ],
-        "tags": [
-          "AuthService"
-        ]
-      }
-    },
     "/v1/auth/email/{email}/send": {
       "get": {
         "operationId": "AuthService_SendEmail",
@@ -147,46 +115,14 @@
         ]
       }
     },
-    "/v1/auth/telephone/verify": {
-      "post": {
-        "operationId": "AuthService_VerifyTelephone",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/authVerifyTelephoneResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/authVerifyTelephoneRequest"
-            }
-          }
-        ],
-        "tags": [
-          "AuthService"
-        ]
-      }
-    },
-    "/v1/auth/telephone/{telephone}/send": {
+    "/v1/auth/sms/{telephone}/send": {
       "get": {
-        "operationId": "AuthService_SendTelephone",
+        "operationId": "AuthService_SendSMS",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/authSendTelephoneResponse"
+              "$ref": "#/definitions/authSendSMSResponse"
             }
           },
           "default": {
@@ -270,6 +206,38 @@
           "AuthService"
         ]
       }
+    },
+    "/v1/auth/verify": {
+      "post": {
+        "operationId": "AuthService_Verify",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/authVerifyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/authVerifyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -320,7 +288,7 @@
     "authSendEmailResponse": {
       "type": "object"
     },
-    "authSendTelephoneResponse": {
+    "authSendSMSResponse": {
       "type": "object"
     },
     "authSignupRequest": {
@@ -400,7 +368,7 @@
         }
       }
     },
-    "authVerifyEmailRequest": {
+    "authVerifyRequest": {
       "type": "object",
       "properties": {
         "code": {
@@ -408,18 +376,7 @@
         }
       }
     },
-    "authVerifyEmailResponse": {
-      "type": "object"
-    },
-    "authVerifyTelephoneRequest": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string"
-        }
-      }
-    },
-    "authVerifyTelephoneResponse": {
+    "authVerifyResponse": {
       "type": "object"
     },
     "protobufAny": {

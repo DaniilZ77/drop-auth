@@ -10,9 +10,8 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/auth"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/mail"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/sms"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/user"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/verification"
 	userstore "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres/user"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/refreshtoken"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/verificationcode"
@@ -56,16 +55,10 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	// Service
 	authService := auth.New(userStore, refreshTokenStore, authConfig)
 	userService := user.New(userStore)
-	mailService := mail.New(
-		cfg.SMPT.Host,
-		cfg.SMPT.Port,
-		cfg.SMPT.Username,
-		cfg.SMPT.Password,
-		cfg.SMPT.Sender,
-		verificationCodeStore,
-		userStore,
-	)
-	smsService := sms.New(cfg.SMS.Sender, verificationCodeStore, userStore)
+
+	verificationService := verification.New(verificationCodeStore, userStore)
+	verificationService.RegisterEmailService(cfg.SMPT.Host, cfg.SMPT.Port, cfg.SMPT.Username, cfg.SMPT.Password, cfg.SMPT.Sender)
+	verificationService.RegisterSMSService(cfg.SMS.Sender)
 
 	// gRPC server
 	gRPCApp := grpcapp.New(
@@ -74,8 +67,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		authService,
 		userService,
 		authConfig,
-		mailService,
-		smsService,
+		verificationService,
 	)
 
 	// HTTP server

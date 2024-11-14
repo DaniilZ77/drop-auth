@@ -37,13 +37,13 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	// Register user
 	err = userv1.RegisterUserServiceHandler(ctx, gwmux, conn)
 	if err != nil {
-		logger.Log().Fatal(ctx, "failed to register gateway: %w", err)
+		logger.Log().Fatal(ctx, "failed to register gateway: %v", err)
 	}
 
 	// Register auth
 	err = authv1.RegisterAuthServiceHandler(ctx, gwmux, conn)
 	if err != nil {
-		logger.Log().Fatal(ctx, "failed to register gateway: %w", err)
+		logger.Log().Fatal(ctx, "failed to register gateway: %v", err)
 	}
 
 	// Cors
@@ -65,12 +65,12 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 func (app *App) MustRun(ctx context.Context) {
 	if err := app.Run(ctx); err != nil {
-		logger.Log().Fatal(ctx, "Failed to run http server: %w", err)
+		logger.Log().Fatal(ctx, "Failed to run http server: %v", err)
 	}
 }
 
 func (app *App) Run(ctx context.Context) error {
-	logger.Log().Info(ctx, "http server started on %s", app.httpServer.Addr)
+	logger.Log().Info(ctx, "http server started on %v", app.httpServer.Addr)
 	// return app.httpServer.ListenAndServeTLS(app.cert, app.key) nolint
 	return app.httpServer.ListenAndServe()
 }
@@ -79,6 +79,6 @@ func (app *App) Stop(ctx context.Context) {
 	logger.Log().Info(ctx, "stopping http server")
 
 	if err := app.httpServer.Shutdown(ctx); err != nil {
-		logger.Log().Fatal(ctx, "failed to shutdown http server: %w", err)
+		logger.Log().Fatal(ctx, "failed to shutdown http server: %v", err)
 	}
 }

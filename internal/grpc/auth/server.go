@@ -11,6 +11,7 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model/auth"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model/validator"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/verification"
 	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,31 +20,34 @@ import (
 
 type server struct {
 	authv1.UnimplementedAuthServiceServer
-	authService core.AuthService
-	authConfig  core.AuthConfig
-	mailService core.MailService
-	userService core.UserService
-	smsService  core.SMSService
+	authService         core.AuthService
+	authConfig          core.AuthConfig
+	userService         core.UserService
+	verificationService core.VerificationService
 }
 
 func Register(
 	gRPCServer *grpc.Server,
 	authService core.AuthService,
 	authConfig core.AuthConfig,
-	mailService core.MailService,
 	userService core.UserService,
-	smsService core.SMSService,
+	verificationService core.VerificationService,
 ) {
-	authv1.RegisterAuthServiceServer(gRPCServer, &server{authService: authService, authConfig: authConfig, mailService: mailService, userService: userService, smsService: smsService})
+	authv1.RegisterAuthServiceServer(
+		gRPCServer,
+		&server{
+			authService:         authService,
+			authConfig:          authConfig,
+			userService:         userService,
+			verificationService: verificationService,
+		})
 }
 
 func (s *server) RefreshToken(ctx context.Context, req *authv1.RefreshTokenRequest) (*authv1.RefreshTokenResponse, error) {
 	accessToken, refreshToken, err := s.authService.RefreshToken(ctx, req.GetRefreshToken())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrAlreadyDeleted) ||
-			errors.Is(err, core.ErrRefreshTokenNotValid) ||
-			errors.Is(err, core.ErrEmailAndTelephoneNotVerified) {
+		if helper.OneOf(err, core.ErrAlreadyDeleted, core.ErrRefreshTokenNotValid, core.ErrEmailOrTelephoneNotVerified) {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
@@ -57,7 +61,7 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 	model.ValidateLoginRequest(v, req)
 	if !v.Valid() {
 		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
-		return nil, helper.ToGRPCError(v)
+		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
 	user := auth.FromLoginRequest(req)
@@ -65,11 +69,31 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 	accessToken, refreshToken, err := s.authService.Login(ctx, *user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrInvalidCredentials) ||
-			errors.Is(err, core.ErrUserNotFound) ||
-			errors.Is(err, core.ErrAlreadyDeleted) ||
-			errors.Is(err, core.ErrEmailAndTelephoneNotVerified) {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
+		if helper.OneOf(err, core.ErrEmailNotVerified, core.ErrTelephoneNotVerified) {
+			go func() {
+				ctx := context.Background()
+				sendEmailOrTelephone(ctx,
+					verification.WithEmail(req.GetEmail()),
+					verification.WithTelephone(req.GetTelephone()),
+					s.verificationService,
+				)
+			}()
+
+			return nil, helper.WithDetails(
+				codes.Unauthenticated,
+				core.ErrEmailOrTelephoneNotVerified,
+				map[string]string{
+					core.KeyEmailOrTelephoneNotVerified: "code to verify email or telephone is sent",
+				},
+			)
+		} else if helper.OneOf(err, core.ErrInvalidCredentials, core.ErrUserNotFound, core.ErrAlreadyExists) {
+			return nil, helper.WithDetails(
+				codes.Unauthenticated,
+				core.ErrInvalidCredentials,
+				map[string]string{
+					core.KeyInvalidCredentials: "invalid email or telephone or password",
+				},
+			)
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
@@ -82,7 +106,7 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 	model.ValidateSignupRequest(v, req)
 	if !v.Valid() {
 		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
-		return nil, helper.ToGRPCError(v)
+		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
 	user := auth.FromSignupRequest(req)
@@ -90,10 +114,7 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 	retUser, err := s.authService.Signup(ctx, *user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrEmailAlreadyExists) ||
-			errors.Is(err, core.ErrUsernameAlreadyExists) ||
-			errors.Is(err, core.ErrTelephoneAlreadyExists) ||
-			errors.Is(err, core.ErrAlreadyExists) {
+		if helper.OneOf(err, core.ErrEmailAlreadyExists, core.ErrUsernameAlreadyExists, core.ErrTelephoneAlreadyExists, core.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
@@ -101,12 +122,11 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 
 	go func() {
 		ctx := context.Background()
-		if err = s.mailService.Send(ctx, *retUser); err != nil && !errors.Is(err, core.ErrEmailNotProvided) {
-			logger.Log().Error(ctx, err.Error())
-		}
-		if err = s.smsService.Send(ctx, *retUser); err != nil && !errors.Is(err, core.ErrTelephoneNotProvided) {
-			logger.Log().Error(ctx, err.Error())
-		}
+		sendEmailOrTelephone(ctx,
+			verification.WithUser(retUser),
+			verification.WithUser(retUser),
+			s.verificationService,
+		)
 	}()
 
 	return auth.ToSignupResponse(*retUser), nil
@@ -126,8 +146,8 @@ func (s *server) ValidateToken(ctx context.Context, req *authv1.ValidateTokenReq
 	return auth.ToValidateTokenResponse(true, *userID), nil
 }
 
-func (s *server) VerifyEmail(ctx context.Context, req *authv1.VerifyEmailRequest) (*authv1.VerifyEmailResponse, error) {
-	_, err := s.mailService.Verify(ctx, req.GetCode())
+func (s *server) Verify(ctx context.Context, req *authv1.VerifyRequest) (*authv1.VerifyResponse, error) {
+	_, err := s.verificationService.Verify(ctx, req.GetCode())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, core.ErrVerificationCodeNotValid) {
@@ -136,7 +156,7 @@ func (s *server) VerifyEmail(ctx context.Context, req *authv1.VerifyEmailRequest
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
 
-	return &authv1.VerifyEmailResponse{}, nil
+	return &authv1.VerifyResponse{}, nil
 }
 
 func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*authv1.SendEmailResponse, error) {
@@ -144,12 +164,12 @@ func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*
 	model.ValidateSendEmailRequest(v, req)
 	if !v.Valid() {
 		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
-		return nil, helper.ToGRPCError(v)
+		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
 	go func() {
 		ctx := context.Background()
-		if err := s.mailService.Resend(ctx, req.GetEmail()); err != nil {
+		if err := s.verificationService.SendEmail(ctx, verification.WithEmail(req.GetEmail())); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()
@@ -157,33 +177,20 @@ func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*
 	return &authv1.SendEmailResponse{}, nil
 }
 
-func (s *server) SendTelephone(ctx context.Context, req *authv1.SendTelephoneRequest) (*authv1.SendTelephoneResponse, error) {
+func (s *server) SendSMS(ctx context.Context, req *authv1.SendSMSRequest) (*authv1.SendSMSResponse, error) {
 	v := validator.New()
-	model.ValidateSendTelephonelRequest(v, req)
+	model.ValidateSendSMSRequest(v, req)
 	if !v.Valid() {
 		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
-		return nil, helper.ToGRPCError(v)
+		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
 	go func() {
 		ctx := context.Background()
-		if err := s.smsService.Resend(ctx, req.GetTelephone()); err != nil {
+		if err := s.verificationService.SendSMS(ctx, verification.WithTelephone(req.GetTelephone())); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()
 
-	return &authv1.SendTelephoneResponse{}, nil
-}
-
-func (s *server) VerifyTelephone(ctx context.Context, req *authv1.VerifyTelephoneRequest) (*authv1.VerifyTelephoneResponse, error) {
-	_, err := s.smsService.Verify(ctx, req.GetCode())
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrVerificationCodeNotValid) {
-			return nil, status.Error(codes.InvalidArgument, core.ErrVerificationCodeNotValid.Error())
-		}
-		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
-	}
-
-	return &authv1.VerifyTelephoneResponse{}, nil
+	return &authv1.SendSMSResponse{}, nil
 }

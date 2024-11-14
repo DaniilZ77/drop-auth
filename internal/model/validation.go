@@ -66,7 +66,7 @@ func ValidateSendEmailRequest(v *validator.Validator, req *authv1.SendEmailReque
 	validateEmail(v, req.GetEmail())
 }
 
-func ValidateSendTelephonelRequest(v *validator.Validator, req *authv1.SendTelephoneRequest) {
+func ValidateSendSMSRequest(v *validator.Validator, req *authv1.SendSMSRequest) {
 	validatePhone(v, req.GetTelephone())
 }
 

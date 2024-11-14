@@ -59,8 +59,8 @@ func (s *service) RefreshToken(ctx context.Context, refreshToken string) (access
 	}
 
 	if !userFromDB.IsEmailVerified && !userFromDB.IsTelephoneVerified {
-		logger.Log().Error(ctx, core.ErrEmailAndTelephoneNotVerified.Error())
-		return nil, nil, core.ErrEmailAndTelephoneNotVerified
+		logger.Log().Error(ctx, core.ErrEmailOrTelephoneNotVerified.Error())
+		return nil, nil, core.ErrEmailOrTelephoneNotVerified
 	}
 
 	accessToken, err := jwt.GenerateToken(userFromDB.ID, s.authConfig)
@@ -86,7 +86,7 @@ func (s *service) Login(ctx context.Context, user core.User) (accesstoken, refre
 	} else if user.Telephone != nil {
 		userFromDB, err = s.userStorage.GetUserByTelephone(ctx, *user.Telephone)
 	} else {
-		return nil, nil, core.ErrEmailOrTelephoneNotProvided
+		return nil, nil, core.ErrEmailAndTelephoneNotProvided
 	}
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
@@ -101,9 +101,13 @@ func (s *service) Login(ctx context.Context, user core.User) (accesstoken, refre
 		return nil, nil, core.ErrAlreadyDeleted
 	}
 
-	if !userFromDB.IsEmailVerified && !userFromDB.IsTelephoneVerified {
-		logger.Log().Error(ctx, core.ErrEmailAndTelephoneNotVerified.Error())
-		return nil, nil, core.ErrEmailAndTelephoneNotVerified
+	if !userFromDB.IsEmailVerified && user.Email != nil {
+		logger.Log().Error(ctx, core.ErrEmailNotVerified.Error())
+		return nil, nil, core.ErrEmailNotVerified
+	}
+	if !userFromDB.IsTelephoneVerified && user.Telephone != nil {
+		logger.Log().Error(ctx, core.ErrTelephoneNotVerified.Error())
+		return nil, nil, core.ErrTelephoneNotVerified
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(userFromDB.PasswordHash), []byte(user.PasswordHash))

@@ -31,7 +31,7 @@ func (s *server) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) 
 	model.ValidateUpdateUserRequest(v, req)
 	if !v.Valid() {
 		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
-		return nil, helper.ToGRPCError(v)
+		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
 	userID, err := helper.GetUserIDFromContext(ctx)
@@ -79,7 +79,7 @@ func (s *server) GetUser(ctx context.Context, req *userv1.GetUserRequest) (*user
 	model.ValidateGetUserRequest(v, req)
 	if !v.Valid() {
 		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
-		return nil, helper.ToGRPCError(v)
+		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
 	getUser := usermodel.FromGetUserRequest(req)
