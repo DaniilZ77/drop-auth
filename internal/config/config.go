@@ -86,7 +86,7 @@ func NewConfig() (*Config, error) {
 	smtpPassword := flag.String("smtp_password", "", "smtp password")
 	smtpSender := flag.String("smtp_sender", "", "smtp sender")
 
-	// SMTP
+	// SMS
 	smsSender := flag.String("sms_sender", "", "sms sender")
 
 	flag.Parse()
