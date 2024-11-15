@@ -19,11 +19,20 @@ import (
 
 type server struct {
 	userv1.UnimplementedUserServiceServer
-	userService core.UserService
+	userService         core.UserService
+	verificationService core.VerificationService
 }
 
-func Register(gRPCServer *grpc.Server, userService core.UserService) {
-	userv1.RegisterUserServiceServer(gRPCServer, &server{userService: userService})
+func Register(
+	gRPCServer *grpc.Server,
+	userService core.UserService,
+	verificationService core.VerificationService,
+) {
+	userv1.RegisterUserServiceServer(gRPCServer,
+		&server{
+			userService:         userService,
+			verificationService: verificationService,
+		})
 }
 
 func (s *server) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) (*userv1.UpdateUserResponse, error) {
@@ -40,13 +49,15 @@ func (s *server) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) 
 		return nil, status.Error(codes.Unauthenticated, core.ErrInvalidCredentials.Error())
 	}
 
-	user := usermodel.FromUpdateUserRequest(req, userID)
+	user, updateCodes := usermodel.FromUpdateUserRequest(req, userID)
 
-	retUser, err := s.userService.UpdateUser(ctx, *user)
+	retUser, err := s.userService.UpdateUser(ctx, *user, *updateCodes)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, core.ErrInvalidCredentials) {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
+		} else if errors.Is(err, core.ErrVerificationCodeNotValid) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		} else if errors.Is(err, core.ErrEmailAlreadyExists) || errors.Is(err, core.ErrUsernameAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, core.ErrAlreadyDeleted) {

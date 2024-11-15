@@ -20,7 +20,7 @@ var (
 	ErrVerificationCodeNotValid     = errors.New("verification code not valid")
 	ErrEmailNotProvided             = errors.New("email is not provided")
 	ErrTelephoneNotProvided         = errors.New("telephone is not provided")
-	ErrEmailOrTelephoneNotVerified  = errors.New("email or telephone not verified")
+	ErrEmailAndTelephoneNotVerified = errors.New("email and telephone not verified")
 	ErrEmailNotVerified             = errors.New("email not verified")
 	ErrTelephoneNotVerified         = errors.New("telephone not verified")
 
@@ -29,6 +29,7 @@ var (
 )
 
 const (
-	KeyEmailOrTelephoneNotVerified = "EMAIL_OR_TELEPHONE_NOT_VERIFIED"
-	KeyInvalidCredentials          = "INVALID_CREDENTIALS"
+	KeyEmailNotVerified     = "EMAIL_NOT_VERIFIED"
+	KeyTelephoneNotVerified = "TELEPHONE_NOT_VERIFIED"
+	KeyInvalidCredentials   = "INVALID_CREDENTIALS"
 )

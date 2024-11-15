@@ -51,6 +51,8 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     networks:
       - drop-auth
+    ports:
+      - "6378:6379"
     volumes:
       - redis-data:/var/lib/redis/data
     env_file:

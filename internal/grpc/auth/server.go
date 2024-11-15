@@ -47,7 +47,7 @@ func (s *server) RefreshToken(ctx context.Context, req *authv1.RefreshTokenReque
 	accessToken, refreshToken, err := s.authService.RefreshToken(ctx, req.GetRefreshToken())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if helper.OneOf(err, core.ErrAlreadyDeleted, core.ErrRefreshTokenNotValid, core.ErrEmailOrTelephoneNotVerified) {
+		if helper.OneOf(err, core.ErrAlreadyDeleted, core.ErrRefreshTokenNotValid, core.ErrEmailAndTelephoneNotVerified) {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
@@ -79,11 +79,18 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 				)
 			}()
 
+			var key string
+			if errors.Is(err, core.ErrEmailNotVerified) {
+				key = core.KeyEmailNotVerified
+			} else {
+				key = core.KeyTelephoneNotVerified
+			}
+
 			return nil, helper.WithDetails(
 				codes.Unauthenticated,
-				core.ErrEmailOrTelephoneNotVerified,
+				err,
 				map[string]string{
-					core.KeyEmailOrTelephoneNotVerified: "code to verify email or telephone is sent",
+					key: "code was sent",
 				},
 			)
 		} else if helper.OneOf(err, core.ErrInvalidCredentials, core.ErrUserNotFound, core.ErrAlreadyExists, core.ErrAlreadyDeleted) {
@@ -169,7 +176,9 @@ func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*
 
 	go func() {
 		ctx := context.Background()
-		if err := s.verificationService.SendEmail(ctx, verification.WithEmail(req.GetEmail())); err != nil {
+		if err := s.verificationService.SendEmail(ctx,
+			verification.WithUser(&core.User{Email: &req.Email}),
+		); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()
@@ -187,7 +196,9 @@ func (s *server) SendSMS(ctx context.Context, req *authv1.SendSMSRequest) (*auth
 
 	go func() {
 		ctx := context.Background()
-		if err := s.verificationService.SendSMS(ctx, verification.WithTelephone(req.GetTelephone())); err != nil {
+		if err := s.verificationService.SendSMS(ctx,
+			verification.WithUser(&core.User{Telephone: &req.Telephone}),
+		); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()

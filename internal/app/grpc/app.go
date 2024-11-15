@@ -81,7 +81,7 @@ func New(
 
 	// Register services
 	auth.Register(gRPCServer, authService, authConfig, userService, verificationService)
-	user.Register(gRPCServer, userService)
+	user.Register(gRPCServer, userService, verificationService)
 
 	return &App{
 		gRPCServer: gRPCServer,

@@ -2,7 +2,6 @@ package verification
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
@@ -29,7 +28,13 @@ func setCodeAndSendMail(
 		return err
 	}
 
-	err = store.SetVerificationCode(ctx, code, fmt.Sprintf("e%d", user.ID), 5*time.Minute)
+	val := core.VerificationCode{
+		UserID: user.ID,
+		Type:   core.Email,
+		Value:  *user.Email,
+	}
+
+	err = store.SetVerificationCode(ctx, code, val, 5*time.Minute)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return err
@@ -68,12 +73,18 @@ func setCodeAndSendSMS(
 		return err
 	}
 
-	if err = store.SetVerificationCode(ctx, code, fmt.Sprintf("%d", user.ID), 5*time.Minute); err != nil {
+	val := core.VerificationCode{
+		UserID: user.ID,
+		Type:   core.Telephone,
+		Value:  *user.Telephone,
+	}
+
+	if err = store.SetVerificationCode(ctx, code, val, 5*time.Minute); err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return err
 	}
 
-	logger.Log().Debug(ctx, "code sended to %s: %s; from %s", user.Telephone, code, sender)
+	logger.Log().Debug(ctx, "code sended to %s: %s; from %s", *user.Telephone, code, sender)
 
 	return nil
 }

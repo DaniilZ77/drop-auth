@@ -16,9 +16,10 @@ import (
 func initService(t *testing.T) (core.UserService, *mocks.MockUserStore) {
 	// store
 	userStore := mocks.NewMockUserStore(t)
+	verificationStore := mocks.NewMockVerificationStore(t)
 
 	// service
-	userService := New(userStore)
+	userService := New(userStore, verificationStore)
 
 	return userService, userStore
 }
@@ -76,7 +77,7 @@ func TestUpdateUser_Success(t *testing.T) {
 	userStore.EXPECT().GetUserByID(mock.Anything, userID).Return(&core.User{}, nil).Once()
 	userStore.EXPECT().UpdateUser(mock.Anything, updateUser).Return(updatedUser, nil).Once()
 
-	user, err := userService.UpdateUser(context.Background(), updateUser)
+	user, err := userService.UpdateUser(context.Background(), updateUser, core.UpdateCodes{})
 	assert.NoError(t, err)
 	assert.Equal(t, updatedUser, user)
 }
@@ -111,7 +112,7 @@ func TestUpdateUser_UpdatePasswordSuccess(t *testing.T) {
 		return err == nil
 	})).Return(&core.User{}, nil).Once()
 
-	_, err = userService.UpdateUser(context.Background(), updateUser)
+	_, err = userService.UpdateUser(context.Background(), updateUser, core.UpdateCodes{})
 	assert.NoError(t, err)
 }
 
@@ -129,7 +130,7 @@ func TestUpdateUser_AlreadyDeleted(t *testing.T) {
 	// mock behaviour
 	userStore.EXPECT().GetUserByID(mock.Anything, mock.Anything).Return(userFromDB, nil).Once()
 
-	_, err := userService.UpdateUser(context.Background(), core.UpdateUser{})
+	_, err := userService.UpdateUser(context.Background(), core.UpdateUser{}, core.UpdateCodes{})
 	assert.ErrorIs(t, err, core.ErrAlreadyDeleted)
 }
 
@@ -167,7 +168,7 @@ func TestUpdateUser_Fail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.behaviour()
 
-			_, err := userService.UpdateUser(ctx, core.UpdateUser{})
+			_, err := userService.UpdateUser(ctx, core.UpdateUser{}, core.UpdateCodes{})
 			assert.ErrorIs(t, err, wantErr)
 		})
 	}

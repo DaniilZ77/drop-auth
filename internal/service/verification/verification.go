@@ -2,7 +2,6 @@ package verification
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
@@ -45,32 +44,33 @@ func (s *service) RegisterSMSService(smsSender string) {
 }
 
 func (s *service) Verify(ctx context.Context, code string) (*core.User, error) {
-	userIDStr, err := s.verificationStore.GetVerificationCode(ctx, code)
+	verificationCode, err := s.verificationStore.GetVerificationCode(ctx, code)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return nil, err
-	}
-
-	userID, err := strconv.Atoi(userIDStr[1:])
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, err
-	}
-
-	var isEmailVerified *bool
-	var isTelephoneVerified *bool
-	if userIDStr[0] == 'e' {
-		isEmailVerified = new(bool)
-		*isEmailVerified = true
-	} else {
-		isTelephoneVerified = new(bool)
-		*isTelephoneVerified = true
 	}
 
 	err = s.verificationStore.DeleteVerificationCode(ctx, code)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return nil, err
+	}
+
+	userID := verificationCode.UserID
+
+	if userID <= 0 {
+		logger.Log().Error(ctx, core.ErrVerificationCodeNotValid.Error())
+		return nil, core.ErrVerificationCodeNotValid
+	}
+
+	var isEmailVerified *bool
+	var isTelephoneVerified *bool
+	if verificationCode.Type == core.Email {
+		isEmailVerified = new(bool)
+		*isEmailVerified = true
+	} else if verificationCode.Type == core.Telephone {
+		isTelephoneVerified = new(bool)
+		*isTelephoneVerified = true
 	}
 
 	user := core.UpdateUser{

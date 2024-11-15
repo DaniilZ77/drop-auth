@@ -42,9 +42,11 @@ func ValidateUpdateUserRequest(v *validator.Validator, req *userv1.UpdateUserReq
 		case "username":
 			validateUsername(v, req.User.GetUsername())
 		case "email":
-			validateEmail(v, req.User.GetEmail())
+			validateEmail(v, req.GetUser().GetEmail().GetEmail())
+			validateCode(v, req.GetUser().GetEmail().GetCode())
 		case "telephone":
-			validatePhone(v, req.GetUser().GetTelephone())
+			validatePhone(v, req.GetUser().GetTelephone().GetTelephone())
+			validateCode(v, req.GetUser().GetTelephone().GetCode())
 		case "firstName":
 			validateName(v, path, req.GetUser().GetFirstName())
 		case "lastName":
@@ -68,6 +70,10 @@ func ValidateSendEmailRequest(v *validator.Validator, req *authv1.SendEmailReque
 
 func ValidateSendSMSRequest(v *validator.Validator, req *authv1.SendSMSRequest) {
 	validatePhone(v, req.GetTelephone())
+}
+
+func validateCode(v *validator.Validator, code string) {
+	v.Check(code != "", "code", "must be not empty")
 }
 
 func validateName(v *validator.Validator, key string, name string) {

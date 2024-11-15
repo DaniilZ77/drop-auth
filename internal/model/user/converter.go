@@ -6,16 +6,19 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func FromUpdateUserRequest(req *userv1.UpdateUserRequest, userID int) *core.UpdateUser {
+func FromUpdateUserRequest(req *userv1.UpdateUserRequest, userID int) (*core.UpdateUser, *core.UpdateCodes) {
 	user := new(core.UpdateUser)
 	user.ID = userID
+
+	updateCodes := new(core.UpdateCodes)
 
 	for _, path := range req.UpdateMask.Paths {
 		switch path {
 		case "username":
 			user.Username = &req.GetUser().Username
 		case "email":
-			user.Email = &req.GetUser().Email
+			user.Email = &req.GetUser().GetEmail().Email
+			updateCodes.EmailCode = &req.GetUser().GetEmail().Code
 		case "password":
 			user.Password = new(core.UpdatePassword)
 			user.Password.OldPassword = req.GetUser().GetPassword().GetOldPassword()
@@ -27,13 +30,14 @@ func FromUpdateUserRequest(req *userv1.UpdateUserRequest, userID int) *core.Upda
 		case "middleName":
 			user.MiddleName = &req.GetUser().MiddleName
 		case "telephone":
-			user.Telephone = &req.GetUser().Telephone
+			user.Telephone = &req.GetUser().GetTelephone().Telephone
+			updateCodes.TelephoneCode = &req.GetUser().GetTelephone().Code
 		case "pseudonym":
 			user.Pseudonym = &req.GetUser().Pseudonym
 		}
 	}
 
-	return user
+	return user, updateCodes
 }
 
 func FromGetUserRequest(req *userv1.GetUserRequest) *core.User {

@@ -54,7 +54,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	// Service
 	authService := auth.New(userStore, refreshTokenStore, authConfig)
-	userService := user.New(userStore)
+	userService := user.New(userStore, verificationCodeStore)
 
 	verificationService := verification.New(verificationCodeStore, userStore)
 	verificationService.RegisterEmailService(cfg.SMPT.Host, cfg.SMPT.Port, cfg.SMPT.Username, cfg.SMPT.Password, cfg.SMPT.Sender)

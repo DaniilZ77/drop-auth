@@ -59,8 +59,8 @@ func (s *service) RefreshToken(ctx context.Context, refreshToken string) (access
 	}
 
 	if !userFromDB.IsEmailVerified && !userFromDB.IsTelephoneVerified {
-		logger.Log().Error(ctx, core.ErrEmailOrTelephoneNotVerified.Error())
-		return nil, nil, core.ErrEmailOrTelephoneNotVerified
+		logger.Log().Error(ctx, core.ErrEmailAndTelephoneNotVerified.Error())
+		return nil, nil, core.ErrEmailAndTelephoneNotVerified
 	}
 
 	accessToken, err := jwt.GenerateToken(userFromDB.ID, s.authConfig)
@@ -101,8 +101,7 @@ func (s *service) Login(ctx context.Context, user core.User) (accesstoken, refre
 		return nil, nil, core.ErrAlreadyDeleted
 	}
 
-	if user.Telephone != nil && *user.Telephone != *userFromDB.Telephone ||
-		user.Email != nil && *user.Email != *userFromDB.Email {
+	if user.Telephone != nil && (userFromDB.Telephone == nil || *user.Telephone != *userFromDB.Telephone) {
 		logger.Log().Error(ctx, core.ErrInvalidCredentials.Error())
 		return nil, nil, core.ErrInvalidCredentials
 	}

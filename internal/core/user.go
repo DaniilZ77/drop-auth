@@ -37,13 +37,18 @@ type (
 		IsTelephoneVerified *bool
 	}
 
+	UpdateCodes struct {
+		EmailCode     *string
+		TelephoneCode *string
+	}
+
 	UpdatePassword struct {
 		OldPassword string
 		NewPassword string
 	}
 
 	UserService interface {
-		UpdateUser(ctx context.Context, user UpdateUser) (*User, error)
+		UpdateUser(ctx context.Context, user UpdateUser, updateCodes UpdateCodes) (*User, error)
 		DeleteUser(ctx context.Context, userID int) error
 		GetUser(ctx context.Context, user User) (*User, error)
 	}

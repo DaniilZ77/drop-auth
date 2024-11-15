@@ -15,10 +15,30 @@ type (
 	}
 
 	VerificationStore interface {
-		SetVerificationCode(ctx context.Context, key string, val string, expiresIn time.Duration) error
-		GetVerificationCode(ctx context.Context, key string) (string, error)
+		SetVerificationCode(ctx context.Context, key string, val VerificationCode, expiresIn time.Duration) error
+		GetVerificationCode(ctx context.Context, key string) (*VerificationCode, error)
 		DeleteVerificationCode(ctx context.Context, key string) error
 	}
 
 	Option func(context.Context, UserStore) (*User, error)
+
+	VerificationCode struct {
+		Value  string               `json:"value"`
+		Type   VerificationCodeType `json:"type"`
+		UserID int                  `json:"user_id"`
+	}
 )
+
+type VerificationCodeType int
+
+const (
+	Email VerificationCodeType = iota
+	Telephone
+)
+
+func (vct VerificationCodeType) ToString() string {
+	if vct == 0 {
+		return "email"
+	}
+	return "telephone"
+}
