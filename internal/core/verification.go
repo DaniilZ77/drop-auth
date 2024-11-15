@@ -9,9 +9,9 @@ type (
 	VerificationService interface {
 		RegisterEmailService(host string, port int, username, password, sender string)
 		RegisterSMSService(smsSender string)
-		SendEmail(ctx context.Context, opt Option) error
-		SendSMS(ctx context.Context, opt Option) error
-		Verify(ctx context.Context, code string) (*User, error)
+		SendEmail(ctx context.Context, opt Option, ip string) error
+		SendSMS(ctx context.Context, opt Option, ip string) error
+		Verify(ctx context.Context, code, ip string) (*User, error)
 	}
 
 	VerificationStore interface {
@@ -26,6 +26,7 @@ type (
 		Value  string               `json:"value"`
 		Type   VerificationCodeType `json:"type"`
 		UserID int                  `json:"user_id"`
+		IP     string               `json:"ip"`
 	}
 )
 

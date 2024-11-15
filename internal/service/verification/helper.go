@@ -16,6 +16,7 @@ func setCodeAndSendMail(
 	dialer *mail.Dialer,
 	sender string,
 	user core.User,
+	ip string,
 ) error {
 	if user.Email == nil {
 		logger.Log().Debug(ctx, "email is nil")
@@ -32,6 +33,7 @@ func setCodeAndSendMail(
 		UserID: user.ID,
 		Type:   core.Email,
 		Value:  *user.Email,
+		IP:     ip,
 	}
 
 	err = store.SetVerificationCode(ctx, code, val, 5*time.Minute)
@@ -61,6 +63,7 @@ func setCodeAndSendSMS(
 	store core.VerificationStore,
 	sender string,
 	user core.User,
+	ip string,
 ) error {
 	if user.Telephone == nil {
 		logger.Log().Debug(ctx, core.ErrTelephoneNotProvided.Error())
@@ -77,6 +80,7 @@ func setCodeAndSendSMS(
 		UserID: user.ID,
 		Type:   core.Telephone,
 		Value:  *user.Telephone,
+		IP:     ip,
 	}
 
 	if err = store.SetVerificationCode(ctx, code, val, 5*time.Minute); err != nil {

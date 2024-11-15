@@ -15,6 +15,7 @@ import (
 	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -64,6 +65,12 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		logger.Log().Error(ctx, core.ErrInternal.Error())
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
 	user := auth.FromLoginRequest(req)
 
 	accessToken, refreshToken, err := s.authService.Login(ctx, *user)
@@ -76,6 +83,7 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 					verification.WithEmail(req.GetEmail()),
 					verification.WithTelephone(req.GetTelephone()),
 					s.verificationService,
+					p.Addr.String(),
 				)
 			}()
 
@@ -116,6 +124,12 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		logger.Log().Error(ctx, core.ErrInternal.Error())
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
 	user := auth.FromSignupRequest(req)
 
 	retUser, err := s.authService.Signup(ctx, *user)
@@ -133,6 +147,7 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 			verification.WithUser(retUser),
 			verification.WithUser(retUser),
 			s.verificationService,
+			p.Addr.String(),
 		)
 	}()
 
@@ -154,7 +169,13 @@ func (s *server) ValidateToken(ctx context.Context, req *authv1.ValidateTokenReq
 }
 
 func (s *server) Verify(ctx context.Context, req *authv1.VerifyRequest) (*authv1.VerifyResponse, error) {
-	_, err := s.verificationService.Verify(ctx, req.GetCode())
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		logger.Log().Error(ctx, core.ErrInternal.Error())
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
+	_, err := s.verificationService.Verify(ctx, req.GetCode(), p.Addr.String())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, core.ErrVerificationCodeNotValid) {
@@ -174,6 +195,12 @@ func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*
 		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		logger.Log().Error(ctx, core.ErrInternal.Error())
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
 	go func() {
 		ctx := context.Background()
 
@@ -182,7 +209,7 @@ func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*
 			opt = verification.WithEmail(req.GetEmail())
 		}
 
-		if err := s.verificationService.SendEmail(ctx, opt); err != nil {
+		if err := s.verificationService.SendEmail(ctx, opt, p.Addr.String()); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()
@@ -198,6 +225,12 @@ func (s *server) SendSMS(ctx context.Context, req *authv1.SendSMSRequest) (*auth
 		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		logger.Log().Error(ctx, core.ErrInternal.Error())
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
 	go func() {
 		ctx := context.Background()
 
@@ -206,7 +239,7 @@ func (s *server) SendSMS(ctx context.Context, req *authv1.SendSMSRequest) (*auth
 			opt = verification.WithTelephone(req.GetTelephone())
 		}
 
-		if err := s.verificationService.SendSMS(ctx, opt); err != nil {
+		if err := s.verificationService.SendSMS(ctx, opt, p.Addr.String()); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()

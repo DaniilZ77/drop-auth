@@ -43,7 +43,7 @@ func (s *service) RegisterSMSService(smsSender string) {
 	s.smsSender = smsSender
 }
 
-func (s *service) Verify(ctx context.Context, code string) (*core.User, error) {
+func (s *service) Verify(ctx context.Context, code, ip string) (*core.User, error) {
 	verificationCode, err := s.verificationStore.GetVerificationCode(ctx, code)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
@@ -58,7 +58,7 @@ func (s *service) Verify(ctx context.Context, code string) (*core.User, error) {
 
 	userID := verificationCode.UserID
 
-	if userID <= 0 {
+	if userID <= 0 || ip != verificationCode.IP {
 		logger.Log().Error(ctx, core.ErrVerificationCodeNotValid.Error())
 		return nil, core.ErrVerificationCodeNotValid
 	}
@@ -88,14 +88,14 @@ func (s *service) Verify(ctx context.Context, code string) (*core.User, error) {
 	return retUser, nil
 }
 
-func (s *service) SendEmail(ctx context.Context, opt core.Option) error {
+func (s *service) SendEmail(ctx context.Context, opt core.Option, ip string) error {
 	user, err := opt(ctx, s.userStore)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return err
 	}
 
-	if err := setCodeAndSendMail(ctx, s.verificationStore, s.emailDialer, s.emailSender, *user); err != nil {
+	if err := setCodeAndSendMail(ctx, s.verificationStore, s.emailDialer, s.emailSender, *user, ip); err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return err
 	}
@@ -103,14 +103,14 @@ func (s *service) SendEmail(ctx context.Context, opt core.Option) error {
 	return err
 }
 
-func (s *service) SendSMS(ctx context.Context, opt core.Option) error {
+func (s *service) SendSMS(ctx context.Context, opt core.Option, ip string) error {
 	user, err := opt(ctx, s.userStore)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return err
 	}
 
-	if err = setCodeAndSendSMS(ctx, s.verificationStore, s.smsSender, *user); err != nil {
+	if err = setCodeAndSendSMS(ctx, s.verificationStore, s.smsSender, *user, ip); err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return err
 	}
