@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func ToSignupResponse(user core.User) *authv1.SignupResponse {
@@ -28,6 +29,8 @@ func ToSignupResponse(user core.User) *authv1.SignupResponse {
 		Pseudonym:           user.Pseudonym,
 		IsEmailVerified:     user.IsEmailVerified,
 		IsTelephoneVerified: user.IsTelephoneVerified,
+		CreatedAt:           timestamppb.New(user.CreatedAt),
+		UpdatedAt:           timestamppb.New(user.UpdatedAt),
 	}
 }
 
@@ -81,6 +84,34 @@ func FromSignupRequest(req *authv1.SignupRequest) *core.User {
 		LastName:     req.GetLastName(),
 		MiddleName:   middleName,
 		Telephone:    telephone,
+	}
+}
+
+func ToResetPasswordResponse(user core.User) *authv1.ResetPasswordResponse {
+	var email, telephone, middleName string
+	if user.Email != nil {
+		email = *user.Email
+	}
+	if user.Telephone != nil {
+		telephone = *user.Telephone
+	}
+	if user.MiddleName != nil {
+		middleName = *user.MiddleName
+	}
+
+	return &authv1.ResetPasswordResponse{
+		UserId:              int64(user.ID),
+		Username:            user.Username,
+		FirstName:           user.FirstName,
+		LastName:            user.LastName,
+		MiddleName:          middleName,
+		Telephone:           telephone,
+		Email:               email,
+		Pseudonym:           user.Pseudonym,
+		IsEmailVerified:     user.IsEmailVerified,
+		IsTelephoneVerified: user.IsTelephoneVerified,
+		CreatedAt:           timestamppb.New(user.CreatedAt),
+		UpdatedAt:           timestamppb.New(user.UpdatedAt),
 	}
 }
 

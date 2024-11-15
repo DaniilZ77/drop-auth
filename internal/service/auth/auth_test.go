@@ -25,6 +25,7 @@ func initService(t *testing.T) (core.AuthService, *mocks.MockUserStore, *mocks.M
 	// store
 	userStore := mocks.NewMockUserStore(t)
 	refreshTokenStore := mocks.NewMockRefreshTokenStore(t)
+	verificationStore := mocks.NewMockVerificationStore(t)
 
 	// config
 	authConfig := core.AuthConfig{
@@ -34,7 +35,7 @@ func initService(t *testing.T) (core.AuthService, *mocks.MockUserStore, *mocks.M
 	}
 
 	// service
-	authService := New(userStore, refreshTokenStore, authConfig)
+	authService := New(userStore, refreshTokenStore, authConfig, verificationStore)
 
 	return authService, userStore, refreshTokenStore
 }
@@ -134,6 +135,7 @@ func TestLogin_Success(t *testing.T) {
 	// store
 	userStore := mocks.NewMockUserStore(t)
 	refreshTokenStore := mocks.NewMockRefreshTokenStore(t)
+	verificationStore := mocks.NewMockVerificationStore(t)
 
 	// config
 	atTTL := 10
@@ -146,7 +148,7 @@ func TestLogin_Success(t *testing.T) {
 	}
 
 	// service
-	authService := New(userStore, refreshTokenStore, authConfig)
+	authService := New(userStore, refreshTokenStore, authConfig, verificationStore)
 
 	// vars
 	userID := 1

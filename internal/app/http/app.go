@@ -32,7 +32,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		logger.Log().Fatal(ctx, "failed to dial server:", err)
 	}
 
-	gwmux := runtime.NewServeMux()
+	gwmux := runtime.NewServeMux(runtime.SetQueryParameterParser(&CustomQueryParameterParser{}))
 
 	// Register user
 	err = userv1.RegisterUserServiceHandler(ctx, gwmux, conn)

@@ -60,6 +60,11 @@ func ValidateUpdateUserRequest(v *validator.Validator, req *userv1.UpdateUserReq
 	}
 }
 
+func ValidateResetPassword(v *validator.Validator, req *authv1.ResetPasswordRequest) {
+	validateCode(v, req.GetCode())
+	validatePassword(v, req.GetPassword())
+}
+
 func ValidateGetUserRequest(v *validator.Validator, req *userv1.GetUserRequest) {
 	v.Check(req.GetUserId() > 0, "user_id", "must be positive")
 }

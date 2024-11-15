@@ -10,6 +10,7 @@ type (
 		Login(ctx context.Context, user User) (accessToken *string, refreshToken *string, err error)
 		Signup(ctx context.Context, user User) (*User, error)
 		RefreshToken(ctx context.Context, refreshToken string) (*string, *string, error)
+		ResetPassword(ctx context.Context, code, password string) (*User, error)
 	}
 
 	AuthConfig struct {

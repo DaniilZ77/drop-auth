@@ -176,9 +176,13 @@ func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*
 
 	go func() {
 		ctx := context.Background()
-		if err := s.verificationService.SendEmail(ctx,
-			verification.WithUser(&core.User{Email: &req.Email}),
-		); err != nil {
+
+		opt := verification.WithUser(&core.User{Email: &req.Email})
+		if req.GetIsVerified() {
+			opt = verification.WithEmail(req.GetEmail())
+		}
+
+		if err := s.verificationService.SendEmail(ctx, opt); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()
@@ -196,12 +200,36 @@ func (s *server) SendSMS(ctx context.Context, req *authv1.SendSMSRequest) (*auth
 
 	go func() {
 		ctx := context.Background()
-		if err := s.verificationService.SendSMS(ctx,
-			verification.WithUser(&core.User{Telephone: &req.Telephone}),
-		); err != nil {
+
+		opt := verification.WithUser(&core.User{Telephone: &req.Telephone})
+		if req.GetIsVerified() {
+			opt = verification.WithTelephone(req.GetTelephone())
+		}
+
+		if err := s.verificationService.SendSMS(ctx, opt); err != nil {
 			logger.Log().Error(ctx, err.Error())
 		}
 	}()
 
 	return &authv1.SendSMSResponse{}, nil
+}
+
+func (s *server) ResetPassword(ctx context.Context, req *authv1.ResetPasswordRequest) (*authv1.ResetPasswordResponse, error) {
+	v := validator.New()
+	model.ValidateResetPassword(v, req)
+	if !v.Valid() {
+		logger.Log().Debug(ctx, fmt.Sprintf("%+v", v.Errors))
+		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
+	}
+
+	user, err := s.authService.ResetPassword(ctx, req.GetCode(), req.GetPassword())
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, core.ErrVerificationCodeNotValid) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
+	return auth.ToResetPasswordResponse(*user), nil
 }

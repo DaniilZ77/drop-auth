@@ -15,6 +15,7 @@ import (
 type service struct {
 	userStorage         core.UserStore
 	refreshTokenStorage core.RefreshTokenStore
+	verificationStorage core.VerificationStore
 	authConfig          core.AuthConfig
 }
 
@@ -26,11 +27,17 @@ func NewConfig(secret string, accessTokenTTL, refreshTokenTTL int) core.AuthConf
 	}
 }
 
-func New(userStorage core.UserStore, refreshTokenStorage core.RefreshTokenStore, authConfig core.AuthConfig) core.AuthService {
+func New(
+	userStorage core.UserStore,
+	refreshTokenStorage core.RefreshTokenStore,
+	authConfig core.AuthConfig,
+	verificationStorage core.VerificationStore,
+) core.AuthService {
 	return &service{
 		userStorage:         userStorage,
 		refreshTokenStorage: refreshTokenStorage,
 		authConfig:          authConfig,
+		verificationStorage: verificationStorage,
 	}
 }
 
@@ -155,4 +162,43 @@ func (s *service) Signup(ctx context.Context, user core.User) (*core.User, error
 	user.IsDeleted = false
 
 	return &user, nil
+}
+
+func (s *service) ResetPassword(ctx context.Context, code string, password string) (*core.User, error) {
+	verificationCode, err := s.verificationStorage.GetVerificationCode(ctx, code)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, err
+	}
+
+	if err = s.verificationStorage.DeleteVerificationCode(ctx, code); err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, err
+	}
+
+	if verificationCode.UserID <= 0 {
+		logger.Log().Error(ctx, core.ErrVerificationCodeNotValid.Error())
+		return nil, core.ErrVerificationCodeNotValid
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, err
+	}
+
+	updateUser := core.UpdateUser{
+		ID: verificationCode.UserID,
+		Password: &core.UpdatePassword{
+			NewPassword: string(hashedPassword),
+		},
+	}
+
+	user, err := s.userStorage.UpdateUser(ctx, updateUser)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, err
+	}
+
+	return user, nil
 }

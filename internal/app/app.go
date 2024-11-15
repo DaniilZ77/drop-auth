@@ -53,7 +53,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	verificationCodeStore := verificationcode.New(rdb)
 
 	// Service
-	authService := auth.New(userStore, refreshTokenStore, authConfig)
+	authService := auth.New(userStore, refreshTokenStore, authConfig, verificationCodeStore)
 	userService := user.New(userStore, verificationCodeStore)
 
 	verificationService := verification.New(verificationCodeStore, userStore)
