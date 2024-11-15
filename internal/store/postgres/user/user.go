@@ -370,7 +370,8 @@ func (s *store) DeleteUser(ctx context.Context, userID int) error {
 	stmt := `UPDATE users SET
 	email = null,
 	telephone = null,
-	is_deleted = true
+	is_deleted = true,
+	updated_at = DEFAULT
 	WHERE id = $1`
 
 	err := s.DB.QueryRowContext(ctx, stmt, userID).Err()

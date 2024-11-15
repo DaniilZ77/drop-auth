@@ -160,6 +160,8 @@ func (s *service) Signup(ctx context.Context, user core.User) (*core.User, error
 	}
 	user.ID = userID
 	user.IsDeleted = false
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 
 	return &user, nil
 }
