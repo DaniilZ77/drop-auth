@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
@@ -144,7 +145,50 @@ func (s *service) Login(ctx context.Context, user core.User) (accesstoken, refre
 	return accessToken, &refreshToken, nil
 }
 
-func (s *service) Signup(ctx context.Context, user core.User) (*core.User, error) {
+func (s *service) Signup(ctx context.Context, emailCode, telephoneCode string, user core.User, ip string) (*core.User, error) {
+	check := func(userCode string, value string, verificationCodeType core.VerificationCodeType) error {
+		verificationCode, err := s.verificationStorage.GetVerificationCode(ctx, userCode)
+		if err != nil {
+			logger.Log().Error(ctx, err.Error())
+			return fmt.Errorf("%s: %w", verificationCodeType.ToString(), err)
+		}
+
+		err = s.verificationStorage.DeleteVerificationCode(ctx, userCode)
+		if err != nil {
+			logger.Log().Error(ctx, err.Error())
+			return err
+		}
+
+		if verificationCode.Value != value || verificationCode.IP != ip {
+			logger.Log().Error(ctx, core.ErrVerificationCodeNotValid.Error())
+			return fmt.Errorf("%s: %w", verificationCodeType.ToString(), core.ErrVerificationCodeNotValid)
+		}
+
+		return nil
+	}
+
+	isEmailVerified := false
+	if user.Email != nil {
+		err := check(emailCode, *user.Email, core.Email)
+		if err != nil {
+			logger.Log().Error(ctx, err.Error())
+			return nil, err
+		}
+		isEmailVerified = true
+	}
+
+	isTelephoneVerified := false
+	if user.Telephone != nil {
+		err := check(telephoneCode, *user.Telephone, core.Telephone)
+		if err != nil {
+			logger.Log().Error(ctx, err.Error())
+			return nil, err
+		}
+		isTelephoneVerified = true
+	}
+	user.IsEmailVerified = isEmailVerified
+	user.IsTelephoneVerified = isTelephoneVerified
+
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())

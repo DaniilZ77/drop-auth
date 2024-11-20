@@ -65,28 +65,12 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 		return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
 	}
 
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		logger.Log().Error(ctx, core.ErrInternal.Error())
-		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
-	}
-
 	user := auth.FromLoginRequest(req)
 
 	accessToken, refreshToken, err := s.authService.Login(ctx, *user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		if helper.OneOf(err, core.ErrEmailNotVerified, core.ErrTelephoneNotVerified) {
-			go func() {
-				ctx := context.Background()
-				sendEmailOrTelephone(ctx,
-					verification.WithEmail(req.GetEmail()),
-					verification.WithTelephone(req.GetTelephone()),
-					s.verificationService,
-					p.Addr.String(),
-				)
-			}()
-
 			var key string
 			if errors.Is(err, core.ErrEmailNotVerified) {
 				key = core.KeyEmailNotVerified
@@ -98,7 +82,7 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 				codes.Unauthenticated,
 				err,
 				map[string]string{
-					key: "code was sent",
+					key: "email or telephone not verified",
 				},
 			)
 		} else if helper.OneOf(err, core.ErrInvalidCredentials, core.ErrUserNotFound, core.ErrAlreadyExists, core.ErrAlreadyDeleted) {
@@ -130,26 +114,18 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
 
-	user := auth.FromSignupRequest(req)
+	emailCode, telephoneCode, user := auth.FromSignupRequest(req)
 
-	retUser, err := s.authService.Signup(ctx, *user)
+	retUser, err := s.authService.Signup(ctx, emailCode, telephoneCode, *user, p.Addr.String())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		if helper.OneOf(err, core.ErrEmailAlreadyExists, core.ErrUsernameAlreadyExists, core.ErrTelephoneAlreadyExists, core.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
+		} else if errors.Is(err, core.ErrVerificationCodeNotValid) {
+			return nil, status.Errorf(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
-
-	go func() {
-		ctx := context.Background()
-		sendEmailOrTelephone(ctx,
-			verification.WithUser(retUser),
-			verification.WithUser(retUser),
-			s.verificationService,
-			p.Addr.String(),
-		)
-	}()
 
 	return auth.ToSignupResponse(*retUser), nil
 }

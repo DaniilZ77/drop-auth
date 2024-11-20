@@ -26,6 +26,10 @@ github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.51 h1:BfMnDiUrxRVpX
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.51/go.mod h1:oRPaAgn5hrwPORhMXVZDmMDZ4vYn7mb08yG5pfAeDTw=
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.52 h1:wfaLs1xkdrZYxhYncFEpqJOOUQRAos8bl8h3H3uGWio=
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.52/go.mod h1:oRPaAgn5hrwPORhMXVZDmMDZ4vYn7mb08yG5pfAeDTw=
+github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.54 h1:Q+kq3ehzVidBdK2WmOKYTlh3QP7uQwfUIdHjZUGTzzM=
+github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.54/go.mod h1:oRPaAgn5hrwPORhMXVZDmMDZ4vYn7mb08yG5pfAeDTw=
+github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.55 h1:7xNL9Y0vJbtHWqpLu674F5vcRR9KF/2AbGdcqLLsqng=
+github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.55/go.mod h1:oRPaAgn5hrwPORhMXVZDmMDZ4vYn7mb08yG5pfAeDTw=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=

@@ -63,19 +63,19 @@ func FromLoginRequest(req *authv1.LoginRequest) *core.User {
 	}
 }
 
-func FromSignupRequest(req *authv1.SignupRequest) *core.User {
+func FromSignupRequest(req *authv1.SignupRequest) (emailCode, telephoneCode string, user *core.User) {
 	var email, telephone, middleName *string
-	if req.GetEmail() != "" {
-		email = &req.Email
+	if req.GetEmail().GetEmail() != "" {
+		email = &req.GetEmail().Email
 	}
-	if req.GetTelephone() != "" {
-		telephone = &req.Telephone
+	if req.GetTelephone().GetTelephone() != "" {
+		telephone = &req.GetTelephone().Telephone
 	}
 	if req.GetMiddleName() != "" {
 		middleName = &req.MiddleName
 	}
 
-	return &core.User{
+	return req.GetEmail().GetCode(), req.GetTelephone().GetCode(), &core.User{
 		Username:     req.GetUsername(),
 		Email:        email,
 		PasswordHash: req.GetPassword(),

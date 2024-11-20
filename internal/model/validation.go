@@ -18,12 +18,14 @@ func ValidateLoginRequest(v *validator.Validator, req *authv1.LoginRequest) {
 }
 
 func ValidateSignupRequest(v *validator.Validator, req *authv1.SignupRequest) {
-	validateEmailOrTelephone(v, req.GetEmail(), req.GetTelephone())
-	if req.GetEmail() != "" {
-		validateEmail(v, req.GetEmail())
+	validateEmailOrTelephone(v, req.GetEmail().GetEmail(), req.GetTelephone().GetTelephone())
+	if req.GetEmail().GetEmail() != "" {
+		validateEmail(v, req.GetEmail().GetEmail())
+		validateCode(v, req.GetEmail().GetCode())
 	}
-	if req.GetTelephone() != "" {
-		validatePhone(v, req.GetTelephone())
+	if req.GetTelephone().GetTelephone() != "" {
+		validatePhone(v, req.GetTelephone().GetTelephone())
+		validateCode(v, req.GetTelephone().GetCode())
 	}
 	if req.GetMiddleName() != "" {
 		v.Check(validator.Between(len(req.GetMiddleName()), 2, 128), "middle_name", "length must be between 2 and 128")
@@ -86,7 +88,7 @@ func validateName(v *validator.Validator, key string, name string) {
 }
 
 func validateEmailOrTelephone(v *validator.Validator, email, telephone string) {
-	v.Check(email != "" || telephone != "", "email_or_telephone", "email xor telephone must be provided")
+	v.Check(email != "" || telephone != "", "email_or_telephone", "email or telephone must be provided")
 }
 
 func validateEmail(v *validator.Validator, email string) {

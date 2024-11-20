@@ -238,8 +238,10 @@ func (s *store) AddUser(ctx context.Context, user core.User) (userID int, err er
 	middle_name,
 	pseudonym,
 	telephone,
-	password_hash)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+	password_hash,
+	is_email_verified,
+	is_telephone_verified)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	err = s.DB.QueryRowContext(
 		ctx,
@@ -252,6 +254,8 @@ func (s *store) AddUser(ctx context.Context, user core.User) (userID int, err er
 		user.Pseudonym,
 		user.Telephone,
 		user.PasswordHash,
+		user.IsEmailVerified,
+		user.IsTelephoneVerified,
 	).Scan(&userID)
 	if err != nil {
 		logger.Log().Debug(ctx, err.Error())

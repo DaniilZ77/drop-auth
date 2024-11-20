@@ -390,6 +390,17 @@
     "authSendSMSResponse": {
       "type": "object"
     },
+    "authSignupEmail": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        }
+      }
+    },
     "authSignupRequest": {
       "type": "object",
       "properties": {
@@ -406,10 +417,10 @@
           "type": "string"
         },
         "email": {
-          "type": "string"
+          "$ref": "#/definitions/authSignupEmail"
         },
         "telephone": {
-          "type": "string"
+          "$ref": "#/definitions/authSignupTelephone"
         },
         "pseudonym": {
           "type": "string"
@@ -460,6 +471,17 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "authSignupTelephone": {
+      "type": "object",
+      "properties": {
+        "telephone": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
         }
       }
     },
