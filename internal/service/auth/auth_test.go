@@ -21,10 +21,20 @@ const (
 	password = "Qwerty123456"
 )
 
-func initService(t *testing.T) (core.AuthService, *mocks.MockUserStore, *mocks.MockRefreshTokenStore) {
+var (
+	email = "alex@gmail.com"
+)
+
+func initService(t *testing.T) (
+	core.AuthService,
+	*mocks.MockUserStore,
+	*mocks.MockRefreshTokenStore,
+	*mocks.MockVerificationStore,
+) {
 	// store
 	userStore := mocks.NewMockUserStore(t)
 	refreshTokenStore := mocks.NewMockRefreshTokenStore(t)
+	verificationStore := mocks.NewMockVerificationStore(t)
 
 	// config
 	authConfig := core.AuthConfig{
@@ -34,9 +44,9 @@ func initService(t *testing.T) (core.AuthService, *mocks.MockUserStore, *mocks.M
 	}
 
 	// service
-	authService := New(userStore, refreshTokenStore, authConfig)
+	authService := New(userStore, refreshTokenStore, authConfig, verificationStore)
 
-	return authService, userStore, refreshTokenStore
+	return authService, userStore, refreshTokenStore, verificationStore
 }
 
 func isUUID(val string) bool {
@@ -82,17 +92,25 @@ func TestSignup_Success(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, verificationStore := initService(t)
 
 	// vars
 	userID := 1
 	user := core.User{
 		Username:     "alex123",
-		Email:        "alex@gmail.com",
+		Email:        &[]string{"alex@gmail.com"}[0],
 		PasswordHash: password,
 	}
 	userFromDB := &user
 	userFromDB.ID = userID
+	code := "123456"
+	ip := "127.0.0.1"
+	verificationCode := &core.VerificationCode{
+		Value:  *user.Email,
+		Type:   core.Email,
+		UserID: 0,
+		IP:     ip,
+	}
 
 	// mock behaviour
 	userStore.EXPECT().AddUser(mock.Anything, mock.MatchedBy(func(user core.User) bool {
@@ -100,7 +118,10 @@ func TestSignup_Success(t *testing.T) {
 		return err == nil
 	})).Return(userID, nil).Once()
 
-	retUser, err := authService.Signup(context.Background(), user)
+	verificationStore.EXPECT().GetVerificationCode(mock.Anything, code).Return(verificationCode, nil).Once()
+	verificationStore.EXPECT().DeleteVerificationCode(mock.Anything, code).Return(nil).Once()
+
+	retUser, err := authService.Signup(context.Background(), code, "", user, ip)
 	fmt.Println(retUser)
 	assert.NoError(t, err)
 	assert.Equal(t, userFromDB.ID, retUser.ID)
@@ -113,7 +134,7 @@ func TestSignup_Fail(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, _ := initService(t)
 
 	// vars
 	user := core.User{
@@ -124,7 +145,7 @@ func TestSignup_Fail(t *testing.T) {
 	// mock behaviour
 	userStore.EXPECT().AddUser(mock.Anything, mock.Anything).Return(0, wantErr).Once()
 
-	_, err := authService.Signup(context.Background(), user)
+	_, err := authService.Signup(context.Background(), "", "", user, "")
 	assert.ErrorIs(t, err, wantErr)
 }
 
@@ -134,6 +155,7 @@ func TestLogin_Success(t *testing.T) {
 	// store
 	userStore := mocks.NewMockUserStore(t)
 	refreshTokenStore := mocks.NewMockRefreshTokenStore(t)
+	verificationStore := mocks.NewMockVerificationStore(t)
 
 	// config
 	atTTL := 10
@@ -146,20 +168,19 @@ func TestLogin_Success(t *testing.T) {
 	}
 
 	// service
-	authService := New(userStore, refreshTokenStore, authConfig)
+	authService := New(userStore, refreshTokenStore, authConfig, verificationStore)
 
 	// vars
 	userID := 1
-	email := "alex@gmail.com"
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	user := core.User{
-		Email:        email,
+		Email:        &email,
 		PasswordHash: password,
 	}
 	userFromDB := &core.User{
 		ID:           userID,
-		Email:        email,
+		Email:        &email,
 		PasswordHash: string(hashedPassword),
 	}
 	var retRefreshToken string
@@ -187,9 +208,12 @@ func TestLogin_AlreadyDeletedUser(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, _ := initService(t)
 
 	// vars
+	user := core.User{
+		Email: &email,
+	}
 	userFromDB := &core.User{
 		IsDeleted: true,
 	}
@@ -197,7 +221,7 @@ func TestLogin_AlreadyDeletedUser(t *testing.T) {
 	// mock behaviour
 	userStore.EXPECT().GetUserByEmail(mock.Anything, mock.Anything).Return(userFromDB, nil).Once()
 
-	_, _, err := authService.Login(context.Background(), core.User{})
+	_, _, err := authService.Login(context.Background(), user)
 	assert.ErrorIs(t, err, core.ErrAlreadyDeleted)
 }
 
@@ -205,10 +229,12 @@ func TestLogin_InvalidPassword(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, _ := initService(t)
 
 	// vars
+	email := "alex@gmail.com"
 	user := core.User{
+		Email:        &email,
 		PasswordHash: password,
 	}
 	userFromDB := &core.User{
@@ -226,18 +252,21 @@ func TestLogin_Fail(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, refreshTokenStore := initService(t)
+	authService, userStore, refreshTokenStore, _ := initService(t)
 
 	// vars
 	ctx := context.Background()
+	email := "alex@gmail.com"
 	wantError := errors.New("internal error")
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	user := core.User{
 		PasswordHash: password,
+		Email:        &email,
 	}
 	userFromDB := &core.User{
 		PasswordHash: string(passwordHash),
+		Email:        &email,
 	}
 
 	tests := []struct {

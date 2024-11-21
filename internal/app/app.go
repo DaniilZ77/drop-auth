@@ -11,8 +11,10 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/auth"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/user"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/verification"
 	userstore "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres/user"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/refreshtoken"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/verificationcode"
 )
 
 type App struct {
@@ -48,13 +50,25 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	// Store
 	userStore := userstore.New(pg)
 	refreshTokenStore := refreshtoken.New(rdb)
+	verificationCodeStore := verificationcode.New(rdb)
 
 	// Service
-	authService := auth.New(userStore, refreshTokenStore, authConfig)
-	userService := user.New(userStore)
+	authService := auth.New(userStore, refreshTokenStore, authConfig, verificationCodeStore)
+	userService := user.New(userStore, verificationCodeStore)
+
+	verificationService := verification.New(verificationCodeStore, userStore)
+	verificationService.RegisterEmailService(cfg.SMPT.Host, cfg.SMPT.Port, cfg.SMPT.Username, cfg.SMPT.Password, cfg.SMPT.Sender)
+	verificationService.RegisterSMSService(cfg.SMS.Sender)
 
 	// gRPC server
-	gRPCApp := grpcapp.New(ctx, authService, userService, authConfig, cfg)
+	gRPCApp := grpcapp.New(
+		ctx,
+		cfg,
+		authService,
+		userService,
+		authConfig,
+		verificationService,
+	)
 
 	// HTTP server
 	httpServer := httpapp.New(ctx, cfg)

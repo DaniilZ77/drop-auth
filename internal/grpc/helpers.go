@@ -2,10 +2,10 @@ package gprc
 
 import (
 	"context"
+	"errors"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model/validator"
 	"github.com/golang-jwt/jwt"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -49,10 +49,10 @@ func GetUserIDFromContext(ctx context.Context) (int, error) {
 	return id, nil
 }
 
-func ToGRPCError(v *validator.Validator) error {
-	st := status.New(codes.InvalidArgument, core.ErrValidationFailed.Error())
+func WithDetails(code codes.Code, err error, details map[string]string) error {
+	st := status.New(code, err.Error())
 	var violations []*errdetails.QuotaFailure_Violation
-	for k, v := range v.Errors {
+	for k, v := range details {
 		violations = append(violations, &errdetails.QuotaFailure_Violation{
 			Subject:     k,
 			Description: v,
@@ -63,4 +63,14 @@ func ToGRPCError(v *validator.Validator) error {
 		return st.Err()
 	}
 	return ds.Err()
+}
+
+func OneOf(e error, errs ...error) bool {
+	for _, err := range errs {
+		if errors.Is(e, err) {
+			return true
+		}
+	}
+
+	return false
 }

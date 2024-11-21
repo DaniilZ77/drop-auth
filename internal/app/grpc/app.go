@@ -15,7 +15,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -26,10 +26,11 @@ type App struct {
 
 func New(
 	ctx context.Context,
+	cfg *config.Config,
 	authService core.AuthService,
 	userService core.UserService,
 	authConfig core.AuthConfig,
-	cfg *config.Config,
+	verificationService core.VerificationService,
 ) *App {
 	// Methods that require authentication
 	requireAuth := map[string]bool{
@@ -67,20 +68,20 @@ func New(
 		middleware.EnsureValidToken(cfg.JWTSecret, requireAuth),
 	))
 
-	// TLS
-	creds, err := credentials.NewServerTLSFromFile(cfg.Cert, cfg.Key)
-	if err != nil {
-		logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
-	}
+	// TLS nolint
+	// creds, err := credentials.NewServerTLSFromFile(cfg.Cert, cfg.Key)
+	// if err != nil {
+	// 	logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
+	// }
 
-	opts = append(opts, grpc.Creds(creds))
+	opts = append(opts, grpc.Creds(insecure.NewCredentials()))
 
 	// Create gRPC server
 	gRPCServer := grpc.NewServer(opts...)
 
 	// Register services
-	auth.Register(gRPCServer, authService, authConfig)
-	user.Register(gRPCServer, userService)
+	auth.Register(gRPCServer, authService, authConfig, userService, verificationService)
+	user.Register(gRPCServer, userService, verificationService)
 
 	return &App{
 		gRPCServer: gRPCServer,

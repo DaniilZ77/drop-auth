@@ -12,8 +12,9 @@ run: ### run app
 	go run cmd/auth/main.go -db_url '$(PG_URL)' \
 	-grpc_port localhost:50051 -http_port localhost:8080 -log_level debug -cert ./tls/cert.pem \
 	-key ./tls/key.pem -jwt_secret secret \
-	-access_token_ttl 2 -refresh_token_ttl 14400 \
-	-read_timeout 5
+	-access_token_ttl 15 -refresh_token_ttl 14400 \
+	-read_timeout 5 -smtp_port 1025 -smtp_host localhost -smtp_sender drop@yandex.ru \
+	-sms_sender +77777777777
 
 build: ### build app
 	go build ${BUILD_FLAGS} -o ${SERVICE_NAME} cmd/auth/main.go

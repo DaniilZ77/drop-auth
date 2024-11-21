@@ -70,7 +70,7 @@ func (_c *MockUserService_DeleteUser_Call) RunAndReturn(run func(context.Context
 }
 
 // GetUser provides a mock function with given fields: ctx, user
-func (_m *MockUserService) GetUser(ctx context.Context, user core.GetUser) (*core.User, error) {
+func (_m *MockUserService) GetUser(ctx context.Context, user core.User) (*core.User, error) {
 	ret := _m.Called(ctx, user)
 
 	if len(ret) == 0 {
@@ -79,10 +79,10 @@ func (_m *MockUserService) GetUser(ctx context.Context, user core.GetUser) (*cor
 
 	var r0 *core.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.GetUser) (*core.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.User) (*core.User, error)); ok {
 		return rf(ctx, user)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, core.GetUser) *core.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.User) *core.User); ok {
 		r0 = rf(ctx, user)
 	} else {
 		if ret.Get(0) != nil {
@@ -90,7 +90,7 @@ func (_m *MockUserService) GetUser(ctx context.Context, user core.GetUser) (*cor
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, core.GetUser) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, core.User) error); ok {
 		r1 = rf(ctx, user)
 	} else {
 		r1 = ret.Error(1)
@@ -106,14 +106,14 @@ type MockUserService_GetUser_Call struct {
 
 // GetUser is a helper method to define mock.On call
 //   - ctx context.Context
-//   - user core.GetUser
+//   - user core.User
 func (_e *MockUserService_Expecter) GetUser(ctx interface{}, user interface{}) *MockUserService_GetUser_Call {
 	return &MockUserService_GetUser_Call{Call: _e.mock.On("GetUser", ctx, user)}
 }
 
-func (_c *MockUserService_GetUser_Call) Run(run func(ctx context.Context, user core.GetUser)) *MockUserService_GetUser_Call {
+func (_c *MockUserService_GetUser_Call) Run(run func(ctx context.Context, user core.User)) *MockUserService_GetUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(core.GetUser))
+		run(args[0].(context.Context), args[1].(core.User))
 	})
 	return _c
 }
@@ -123,14 +123,14 @@ func (_c *MockUserService_GetUser_Call) Return(_a0 *core.User, _a1 error) *MockU
 	return _c
 }
 
-func (_c *MockUserService_GetUser_Call) RunAndReturn(run func(context.Context, core.GetUser) (*core.User, error)) *MockUserService_GetUser_Call {
+func (_c *MockUserService_GetUser_Call) RunAndReturn(run func(context.Context, core.User) (*core.User, error)) *MockUserService_GetUser_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// UpdateUser provides a mock function with given fields: ctx, user
-func (_m *MockUserService) UpdateUser(ctx context.Context, user core.UpdateUser) (*core.User, error) {
-	ret := _m.Called(ctx, user)
+// UpdateUser provides a mock function with given fields: ctx, user, updateCodes
+func (_m *MockUserService) UpdateUser(ctx context.Context, user core.UpdateUser, updateCodes core.UpdateCodes) (*core.User, error) {
+	ret := _m.Called(ctx, user, updateCodes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateUser")
@@ -138,19 +138,19 @@ func (_m *MockUserService) UpdateUser(ctx context.Context, user core.UpdateUser)
 
 	var r0 *core.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser) (*core.User, error)); ok {
-		return rf(ctx, user)
+	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser, core.UpdateCodes) (*core.User, error)); ok {
+		return rf(ctx, user, updateCodes)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser) *core.User); ok {
-		r0 = rf(ctx, user)
+	if rf, ok := ret.Get(0).(func(context.Context, core.UpdateUser, core.UpdateCodes) *core.User); ok {
+		r0 = rf(ctx, user, updateCodes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, core.UpdateUser) error); ok {
-		r1 = rf(ctx, user)
+	if rf, ok := ret.Get(1).(func(context.Context, core.UpdateUser, core.UpdateCodes) error); ok {
+		r1 = rf(ctx, user, updateCodes)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -166,13 +166,14 @@ type MockUserService_UpdateUser_Call struct {
 // UpdateUser is a helper method to define mock.On call
 //   - ctx context.Context
 //   - user core.UpdateUser
-func (_e *MockUserService_Expecter) UpdateUser(ctx interface{}, user interface{}) *MockUserService_UpdateUser_Call {
-	return &MockUserService_UpdateUser_Call{Call: _e.mock.On("UpdateUser", ctx, user)}
+//   - updateCodes core.UpdateCodes
+func (_e *MockUserService_Expecter) UpdateUser(ctx interface{}, user interface{}, updateCodes interface{}) *MockUserService_UpdateUser_Call {
+	return &MockUserService_UpdateUser_Call{Call: _e.mock.On("UpdateUser", ctx, user, updateCodes)}
 }
 
-func (_c *MockUserService_UpdateUser_Call) Run(run func(ctx context.Context, user core.UpdateUser)) *MockUserService_UpdateUser_Call {
+func (_c *MockUserService_UpdateUser_Call) Run(run func(ctx context.Context, user core.UpdateUser, updateCodes core.UpdateCodes)) *MockUserService_UpdateUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(core.UpdateUser))
+		run(args[0].(context.Context), args[1].(core.UpdateUser), args[2].(core.UpdateCodes))
 	})
 	return _c
 }
@@ -182,7 +183,7 @@ func (_c *MockUserService_UpdateUser_Call) Return(_a0 *core.User, _a1 error) *Mo
 	return _c
 }
 
-func (_c *MockUserService_UpdateUser_Call) RunAndReturn(run func(context.Context, core.UpdateUser) (*core.User, error)) *MockUserService_UpdateUser_Call {
+func (_c *MockUserService_UpdateUser_Call) RunAndReturn(run func(context.Context, core.UpdateUser, core.UpdateCodes) (*core.User, error)) *MockUserService_UpdateUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

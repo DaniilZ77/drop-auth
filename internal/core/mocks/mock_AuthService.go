@@ -158,9 +158,69 @@ func (_c *MockAuthService_RefreshToken_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// Signup provides a mock function with given fields: ctx, user
-func (_m *MockAuthService) Signup(ctx context.Context, user core.User) (*core.User, error) {
-	ret := _m.Called(ctx, user)
+// ResetPassword provides a mock function with given fields: ctx, code, password
+func (_m *MockAuthService) ResetPassword(ctx context.Context, code string, password string) (*core.User, error) {
+	ret := _m.Called(ctx, code, password)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ResetPassword")
+	}
+
+	var r0 *core.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*core.User, error)); ok {
+		return rf(ctx, code, password)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.User); ok {
+		r0 = rf(ctx, code, password)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, code, password)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockAuthService_ResetPassword_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ResetPassword'
+type MockAuthService_ResetPassword_Call struct {
+	*mock.Call
+}
+
+// ResetPassword is a helper method to define mock.On call
+//   - ctx context.Context
+//   - code string
+//   - password string
+func (_e *MockAuthService_Expecter) ResetPassword(ctx interface{}, code interface{}, password interface{}) *MockAuthService_ResetPassword_Call {
+	return &MockAuthService_ResetPassword_Call{Call: _e.mock.On("ResetPassword", ctx, code, password)}
+}
+
+func (_c *MockAuthService_ResetPassword_Call) Run(run func(ctx context.Context, code string, password string)) *MockAuthService_ResetPassword_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *MockAuthService_ResetPassword_Call) Return(_a0 *core.User, _a1 error) *MockAuthService_ResetPassword_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockAuthService_ResetPassword_Call) RunAndReturn(run func(context.Context, string, string) (*core.User, error)) *MockAuthService_ResetPassword_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Signup provides a mock function with given fields: ctx, emailCode, telephoneCode, user, ip
+func (_m *MockAuthService) Signup(ctx context.Context, emailCode string, telephoneCode string, user core.User, ip string) (*core.User, error) {
+	ret := _m.Called(ctx, emailCode, telephoneCode, user, ip)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Signup")
@@ -168,19 +228,19 @@ func (_m *MockAuthService) Signup(ctx context.Context, user core.User) (*core.Us
 
 	var r0 *core.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.User) (*core.User, error)); ok {
-		return rf(ctx, user)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, core.User, string) (*core.User, error)); ok {
+		return rf(ctx, emailCode, telephoneCode, user, ip)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, core.User) *core.User); ok {
-		r0 = rf(ctx, user)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, core.User, string) *core.User); ok {
+		r0 = rf(ctx, emailCode, telephoneCode, user, ip)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, core.User) error); ok {
-		r1 = rf(ctx, user)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, core.User, string) error); ok {
+		r1 = rf(ctx, emailCode, telephoneCode, user, ip)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -195,14 +255,17 @@ type MockAuthService_Signup_Call struct {
 
 // Signup is a helper method to define mock.On call
 //   - ctx context.Context
+//   - emailCode string
+//   - telephoneCode string
 //   - user core.User
-func (_e *MockAuthService_Expecter) Signup(ctx interface{}, user interface{}) *MockAuthService_Signup_Call {
-	return &MockAuthService_Signup_Call{Call: _e.mock.On("Signup", ctx, user)}
+//   - ip string
+func (_e *MockAuthService_Expecter) Signup(ctx interface{}, emailCode interface{}, telephoneCode interface{}, user interface{}, ip interface{}) *MockAuthService_Signup_Call {
+	return &MockAuthService_Signup_Call{Call: _e.mock.On("Signup", ctx, emailCode, telephoneCode, user, ip)}
 }
 
-func (_c *MockAuthService_Signup_Call) Run(run func(ctx context.Context, user core.User)) *MockAuthService_Signup_Call {
+func (_c *MockAuthService_Signup_Call) Run(run func(ctx context.Context, emailCode string, telephoneCode string, user core.User, ip string)) *MockAuthService_Signup_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(core.User))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(core.User), args[4].(string))
 	})
 	return _c
 }
@@ -212,7 +275,7 @@ func (_c *MockAuthService_Signup_Call) Return(_a0 *core.User, _a1 error) *MockAu
 	return _c
 }
 
-func (_c *MockAuthService_Signup_Call) RunAndReturn(run func(context.Context, core.User) (*core.User, error)) *MockAuthService_Signup_Call {
+func (_c *MockAuthService_Signup_Call) RunAndReturn(run func(context.Context, string, string, core.User, string) (*core.User, error)) *MockAuthService_Signup_Call {
 	_c.Call.Return(run)
 	return _c
 }
