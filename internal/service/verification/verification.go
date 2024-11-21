@@ -43,51 +43,6 @@ func (s *service) RegisterSMSService(smsSender string) {
 	s.smsSender = smsSender
 }
 
-func (s *service) Verify(ctx context.Context, code, ip string) (*core.User, error) {
-	verificationCode, err := s.verificationStore.GetVerificationCode(ctx, code)
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, err
-	}
-
-	err = s.verificationStore.DeleteVerificationCode(ctx, code)
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, err
-	}
-
-	userID := verificationCode.UserID
-
-	if userID <= 0 || ip != verificationCode.IP {
-		logger.Log().Error(ctx, core.ErrVerificationCodeNotValid.Error())
-		return nil, core.ErrVerificationCodeNotValid
-	}
-
-	var isEmailVerified *bool
-	var isTelephoneVerified *bool
-	if verificationCode.Type == core.Email {
-		isEmailVerified = new(bool)
-		*isEmailVerified = true
-	} else if verificationCode.Type == core.Telephone {
-		isTelephoneVerified = new(bool)
-		*isTelephoneVerified = true
-	}
-
-	user := core.UpdateUser{
-		ID:                  userID,
-		IsEmailVerified:     isEmailVerified,
-		IsTelephoneVerified: isTelephoneVerified,
-	}
-
-	retUser, err := s.userStore.UpdateUser(ctx, user)
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, err
-	}
-
-	return retUser, nil
-}
-
 func (s *service) SendEmail(ctx context.Context, opt core.Option, ip string) error {
 	user, err := opt(ctx, s.userStore)
 	if err != nil {

@@ -8,8 +8,6 @@ CREATE TABLE IF NOT EXISTS "users" (
     "last_name" VARCHAR(128) NOT NULL,
     "middle_name" VARCHAR(128),
     "password_hash" VARCHAR(255) NOT NULL,
-    "is_email_verified" BOOLEAN NOT NULL DEFAULT false,
-    "is_telephone_verified" BOOLEAN NOT NULL DEFAULT false,
     "is_deleted" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
     "updated_at" TIMESTAMP NOT NULL DEFAULT NOW()

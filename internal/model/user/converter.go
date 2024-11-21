@@ -60,19 +60,17 @@ func ToGetUserResponse(user core.User) *userv1.GetUserResponse {
 	}
 
 	return &userv1.GetUserResponse{
-		UserId:              int64(user.ID),
-		Username:            user.Username,
-		Email:               email,
-		FirstName:           user.FirstName,
-		LastName:            user.LastName,
-		MiddleName:          middleName,
-		Telephone:           telephone,
-		Pseudonym:           user.Pseudonym,
-		IsDeleted:           user.IsDeleted,
-		IsEmailVerified:     user.IsEmailVerified,
-		IsTelephoneVerified: user.IsTelephoneVerified,
-		CreatedAt:           timestamppb.New(user.CreatedAt),
-		UpdatedAt:           timestamppb.New(user.UpdatedAt),
+		UserId:     int64(user.ID),
+		Username:   user.Username,
+		Email:      email,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		MiddleName: middleName,
+		Telephone:  telephone,
+		Pseudonym:  user.Pseudonym,
+		IsDeleted:  user.IsDeleted,
+		CreatedAt:  timestamppb.New(user.CreatedAt),
+		UpdatedAt:  timestamppb.New(user.UpdatedAt),
 	}
 }
 
@@ -89,17 +87,15 @@ func ToUpdateUserResponse(user core.User) *userv1.UpdateUserResponse {
 	}
 
 	return &userv1.UpdateUserResponse{
-		UserId:              int64(user.ID),
-		Username:            user.Username,
-		Email:               email,
-		FirstName:           user.FirstName,
-		LastName:            user.LastName,
-		MiddleName:          middleName,
-		Telephone:           telephone,
-		Pseudonym:           user.Pseudonym,
-		IsEmailVerified:     user.IsEmailVerified,
-		IsTelephoneVerified: user.IsTelephoneVerified,
-		CreatedAt:           timestamppb.New(user.CreatedAt),
-		UpdatedAt:           timestamppb.New(user.UpdatedAt),
+		UserId:     int64(user.ID),
+		Username:   user.Username,
+		Email:      email,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		MiddleName: middleName,
+		Telephone:  telephone,
+		Pseudonym:  user.Pseudonym,
+		CreatedAt:  timestamppb.New(user.CreatedAt),
+		UpdatedAt:  timestamppb.New(user.UpdatedAt),
 	}
 }

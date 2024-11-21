@@ -11,7 +11,6 @@ type (
 		RegisterSMSService(smsSender string)
 		SendEmail(ctx context.Context, opt Option, ip string) error
 		SendSMS(ctx context.Context, opt Option, ip string) error
-		Verify(ctx context.Context, code, ip string) (*User, error)
 	}
 
 	VerificationStore interface {

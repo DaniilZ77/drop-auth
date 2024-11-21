@@ -92,17 +92,17 @@ func (_c *MockVerificationService_RegisterSMSService_Call) RunAndReturn(run func
 	return _c
 }
 
-// SendEmail provides a mock function with given fields: ctx, opt
-func (_m *MockVerificationService) SendEmail(ctx context.Context, opt core.Option) error {
-	ret := _m.Called(ctx, opt)
+// SendEmail provides a mock function with given fields: ctx, opt, ip
+func (_m *MockVerificationService) SendEmail(ctx context.Context, opt core.Option, ip string) error {
+	ret := _m.Called(ctx, opt, ip)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendEmail")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.Option) error); ok {
-		r0 = rf(ctx, opt)
+	if rf, ok := ret.Get(0).(func(context.Context, core.Option, string) error); ok {
+		r0 = rf(ctx, opt, ip)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -118,13 +118,14 @@ type MockVerificationService_SendEmail_Call struct {
 // SendEmail is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opt core.Option
-func (_e *MockVerificationService_Expecter) SendEmail(ctx interface{}, opt interface{}) *MockVerificationService_SendEmail_Call {
-	return &MockVerificationService_SendEmail_Call{Call: _e.mock.On("SendEmail", ctx, opt)}
+//   - ip string
+func (_e *MockVerificationService_Expecter) SendEmail(ctx interface{}, opt interface{}, ip interface{}) *MockVerificationService_SendEmail_Call {
+	return &MockVerificationService_SendEmail_Call{Call: _e.mock.On("SendEmail", ctx, opt, ip)}
 }
 
-func (_c *MockVerificationService_SendEmail_Call) Run(run func(ctx context.Context, opt core.Option)) *MockVerificationService_SendEmail_Call {
+func (_c *MockVerificationService_SendEmail_Call) Run(run func(ctx context.Context, opt core.Option, ip string)) *MockVerificationService_SendEmail_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(core.Option))
+		run(args[0].(context.Context), args[1].(core.Option), args[2].(string))
 	})
 	return _c
 }
@@ -134,22 +135,22 @@ func (_c *MockVerificationService_SendEmail_Call) Return(_a0 error) *MockVerific
 	return _c
 }
 
-func (_c *MockVerificationService_SendEmail_Call) RunAndReturn(run func(context.Context, core.Option) error) *MockVerificationService_SendEmail_Call {
+func (_c *MockVerificationService_SendEmail_Call) RunAndReturn(run func(context.Context, core.Option, string) error) *MockVerificationService_SendEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// SendSMS provides a mock function with given fields: ctx, opt
-func (_m *MockVerificationService) SendSMS(ctx context.Context, opt core.Option) error {
-	ret := _m.Called(ctx, opt)
+// SendSMS provides a mock function with given fields: ctx, opt, ip
+func (_m *MockVerificationService) SendSMS(ctx context.Context, opt core.Option, ip string) error {
+	ret := _m.Called(ctx, opt, ip)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendSMS")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.Option) error); ok {
-		r0 = rf(ctx, opt)
+	if rf, ok := ret.Get(0).(func(context.Context, core.Option, string) error); ok {
+		r0 = rf(ctx, opt, ip)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -165,13 +166,14 @@ type MockVerificationService_SendSMS_Call struct {
 // SendSMS is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opt core.Option
-func (_e *MockVerificationService_Expecter) SendSMS(ctx interface{}, opt interface{}) *MockVerificationService_SendSMS_Call {
-	return &MockVerificationService_SendSMS_Call{Call: _e.mock.On("SendSMS", ctx, opt)}
+//   - ip string
+func (_e *MockVerificationService_Expecter) SendSMS(ctx interface{}, opt interface{}, ip interface{}) *MockVerificationService_SendSMS_Call {
+	return &MockVerificationService_SendSMS_Call{Call: _e.mock.On("SendSMS", ctx, opt, ip)}
 }
 
-func (_c *MockVerificationService_SendSMS_Call) Run(run func(ctx context.Context, opt core.Option)) *MockVerificationService_SendSMS_Call {
+func (_c *MockVerificationService_SendSMS_Call) Run(run func(ctx context.Context, opt core.Option, ip string)) *MockVerificationService_SendSMS_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(core.Option))
+		run(args[0].(context.Context), args[1].(core.Option), args[2].(string))
 	})
 	return _c
 }
@@ -181,66 +183,7 @@ func (_c *MockVerificationService_SendSMS_Call) Return(_a0 error) *MockVerificat
 	return _c
 }
 
-func (_c *MockVerificationService_SendSMS_Call) RunAndReturn(run func(context.Context, core.Option) error) *MockVerificationService_SendSMS_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Verify provides a mock function with given fields: ctx, code
-func (_m *MockVerificationService) Verify(ctx context.Context, code string) (*core.User, error) {
-	ret := _m.Called(ctx, code)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Verify")
-	}
-
-	var r0 *core.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*core.User, error)); ok {
-		return rf(ctx, code)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *core.User); ok {
-		r0 = rf(ctx, code)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.User)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, code)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockVerificationService_Verify_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Verify'
-type MockVerificationService_Verify_Call struct {
-	*mock.Call
-}
-
-// Verify is a helper method to define mock.On call
-//   - ctx context.Context
-//   - code string
-func (_e *MockVerificationService_Expecter) Verify(ctx interface{}, code interface{}) *MockVerificationService_Verify_Call {
-	return &MockVerificationService_Verify_Call{Call: _e.mock.On("Verify", ctx, code)}
-}
-
-func (_c *MockVerificationService_Verify_Call) Run(run func(ctx context.Context, code string)) *MockVerificationService_Verify_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockVerificationService_Verify_Call) Return(_a0 *core.User, _a1 error) *MockVerificationService_Verify_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockVerificationService_Verify_Call) RunAndReturn(run func(context.Context, string) (*core.User, error)) *MockVerificationService_Verify_Call {
+func (_c *MockVerificationService_SendSMS_Call) RunAndReturn(run func(context.Context, core.Option, string) error) *MockVerificationService_SendSMS_Call {
 	_c.Call.Return(run)
 	return _c
 }

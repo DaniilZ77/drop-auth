@@ -21,7 +21,16 @@ const (
 	password = "Qwerty123456"
 )
 
-func initService(t *testing.T) (core.AuthService, *mocks.MockUserStore, *mocks.MockRefreshTokenStore) {
+var (
+	email = "alex@gmail.com"
+)
+
+func initService(t *testing.T) (
+	core.AuthService,
+	*mocks.MockUserStore,
+	*mocks.MockRefreshTokenStore,
+	*mocks.MockVerificationStore,
+) {
 	// store
 	userStore := mocks.NewMockUserStore(t)
 	refreshTokenStore := mocks.NewMockRefreshTokenStore(t)
@@ -37,7 +46,7 @@ func initService(t *testing.T) (core.AuthService, *mocks.MockUserStore, *mocks.M
 	// service
 	authService := New(userStore, refreshTokenStore, authConfig, verificationStore)
 
-	return authService, userStore, refreshTokenStore
+	return authService, userStore, refreshTokenStore, verificationStore
 }
 
 func isUUID(val string) bool {
@@ -83,7 +92,7 @@ func TestSignup_Success(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, verificationStore := initService(t)
 
 	// vars
 	userID := 1
@@ -94,6 +103,14 @@ func TestSignup_Success(t *testing.T) {
 	}
 	userFromDB := &user
 	userFromDB.ID = userID
+	code := "123456"
+	ip := "127.0.0.1"
+	verificationCode := &core.VerificationCode{
+		Value:  *user.Email,
+		Type:   core.Email,
+		UserID: 0,
+		IP:     ip,
+	}
 
 	// mock behaviour
 	userStore.EXPECT().AddUser(mock.Anything, mock.MatchedBy(func(user core.User) bool {
@@ -101,7 +118,10 @@ func TestSignup_Success(t *testing.T) {
 		return err == nil
 	})).Return(userID, nil).Once()
 
-	retUser, err := authService.Signup(context.Background(), user)
+	verificationStore.EXPECT().GetVerificationCode(mock.Anything, code).Return(verificationCode, nil).Once()
+	verificationStore.EXPECT().DeleteVerificationCode(mock.Anything, code).Return(nil).Once()
+
+	retUser, err := authService.Signup(context.Background(), code, "", user, ip)
 	fmt.Println(retUser)
 	assert.NoError(t, err)
 	assert.Equal(t, userFromDB.ID, retUser.ID)
@@ -114,7 +134,7 @@ func TestSignup_Fail(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, _ := initService(t)
 
 	// vars
 	user := core.User{
@@ -125,7 +145,7 @@ func TestSignup_Fail(t *testing.T) {
 	// mock behaviour
 	userStore.EXPECT().AddUser(mock.Anything, mock.Anything).Return(0, wantErr).Once()
 
-	_, err := authService.Signup(context.Background(), user)
+	_, err := authService.Signup(context.Background(), "", "", user, "")
 	assert.ErrorIs(t, err, wantErr)
 }
 
@@ -152,7 +172,6 @@ func TestLogin_Success(t *testing.T) {
 
 	// vars
 	userID := 1
-	email := "alex@gmail.com"
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	user := core.User{
@@ -189,10 +208,9 @@ func TestLogin_AlreadyDeletedUser(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, _ := initService(t)
 
 	// vars
-	email := "alex@gmail.com"
 	user := core.User{
 		Email: &email,
 	}
@@ -211,7 +229,7 @@ func TestLogin_InvalidPassword(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, _ := initService(t)
+	authService, userStore, _, _ := initService(t)
 
 	// vars
 	email := "alex@gmail.com"
@@ -234,7 +252,7 @@ func TestLogin_Fail(t *testing.T) {
 	t.Parallel()
 
 	// service and stores
-	authService, userStore, refreshTokenStore := initService(t)
+	authService, userStore, refreshTokenStore, _ := initService(t)
 
 	// vars
 	ctx := context.Background()
@@ -248,6 +266,7 @@ func TestLogin_Fail(t *testing.T) {
 	}
 	userFromDB := &core.User{
 		PasswordHash: string(passwordHash),
+		Email:        &email,
 	}
 
 	tests := []struct {

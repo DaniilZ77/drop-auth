@@ -68,7 +68,7 @@ func New(
 		middleware.EnsureValidToken(cfg.JWTSecret, requireAuth),
 	))
 
-	// TLS
+	// TLS nolint
 	// creds, err := credentials.NewServerTLSFromFile(cfg.Cert, cfg.Key)
 	// if err != nil {
 	// 	logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)

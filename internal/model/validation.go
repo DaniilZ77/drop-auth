@@ -83,7 +83,7 @@ func validateCode(v *validator.Validator, code string) {
 	v.Check(code != "", "code", "must be not empty")
 }
 
-func validateName(v *validator.Validator, key string, name string) {
+func validateName(v *validator.Validator, key, name string) {
 	v.Check(validator.Between(len(name), 2, 128), key, "length must be between 2 and 128")
 }
 

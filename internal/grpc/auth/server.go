@@ -48,7 +48,7 @@ func (s *server) RefreshToken(ctx context.Context, req *authv1.RefreshTokenReque
 	accessToken, refreshToken, err := s.authService.RefreshToken(ctx, req.GetRefreshToken())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if helper.OneOf(err, core.ErrAlreadyDeleted, core.ErrRefreshTokenNotValid, core.ErrEmailAndTelephoneNotVerified) {
+		if helper.OneOf(err, core.ErrAlreadyDeleted, core.ErrRefreshTokenNotValid) {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
@@ -70,29 +70,8 @@ func (s *server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.L
 	accessToken, refreshToken, err := s.authService.Login(ctx, *user)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		if helper.OneOf(err, core.ErrEmailNotVerified, core.ErrTelephoneNotVerified) {
-			var key string
-			if errors.Is(err, core.ErrEmailNotVerified) {
-				key = core.KeyEmailNotVerified
-			} else {
-				key = core.KeyTelephoneNotVerified
-			}
-
-			return nil, helper.WithDetails(
-				codes.Unauthenticated,
-				err,
-				map[string]string{
-					key: "email or telephone not verified",
-				},
-			)
-		} else if helper.OneOf(err, core.ErrInvalidCredentials, core.ErrUserNotFound, core.ErrAlreadyExists, core.ErrAlreadyDeleted) {
-			return nil, helper.WithDetails(
-				codes.Unauthenticated,
-				core.ErrInvalidCredentials,
-				map[string]string{
-					core.KeyInvalidCredentials: "invalid email or telephone or password",
-				},
-			)
+		if helper.OneOf(err, core.ErrInvalidCredentials, core.ErrUserNotFound, core.ErrAlreadyExists, core.ErrAlreadyDeleted) {
+			return nil, status.Error(codes.Unauthenticated, core.ErrInvalidCredentials.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
@@ -122,7 +101,7 @@ func (s *server) Signup(ctx context.Context, req *authv1.SignupRequest) (*authv1
 		if helper.OneOf(err, core.ErrEmailAlreadyExists, core.ErrUsernameAlreadyExists, core.ErrTelephoneAlreadyExists, core.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, core.ErrVerificationCodeNotValid) {
-			return nil, status.Errorf(codes.Unauthenticated, err.Error())
+			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
@@ -142,25 +121,6 @@ func (s *server) ValidateToken(ctx context.Context, req *authv1.ValidateTokenReq
 	}
 
 	return auth.ToValidateTokenResponse(true, *userID), nil
-}
-
-func (s *server) Verify(ctx context.Context, req *authv1.VerifyRequest) (*authv1.VerifyResponse, error) {
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		logger.Log().Error(ctx, core.ErrInternal.Error())
-		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
-	}
-
-	_, err := s.verificationService.Verify(ctx, req.GetCode(), p.Addr.String())
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		if errors.Is(err, core.ErrVerificationCodeNotValid) {
-			return nil, status.Error(codes.InvalidArgument, core.ErrVerificationCodeNotValid.Error())
-		}
-		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
-	}
-
-	return &authv1.VerifyResponse{}, nil
 }
 
 func (s *server) SendEmail(ctx context.Context, req *authv1.SendEmailRequest) (*authv1.SendEmailResponse, error) {
@@ -239,6 +199,8 @@ func (s *server) ResetPassword(ctx context.Context, req *authv1.ResetPasswordReq
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
+
+	logger.Log().Debug(ctx, "user: %v", user)
 
 	return auth.ToResetPasswordResponse(*user), nil
 }

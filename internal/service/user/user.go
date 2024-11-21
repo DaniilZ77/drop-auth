@@ -76,7 +76,6 @@ func (s *service) UpdateUser(ctx context.Context, user core.UpdateUser, updateCo
 		return nil
 	}
 
-	isVerified := true
 	if user.Email != nil {
 		if updateCodes.EmailCode == nil {
 			logger.Log().Error(ctx, "email code is nil")
@@ -87,9 +86,8 @@ func (s *service) UpdateUser(ctx context.Context, user core.UpdateUser, updateCo
 			logger.Log().Error(ctx, err.Error())
 			return nil, err
 		}
-
-		user.IsEmailVerified = &isVerified
 	}
+
 	if user.Telephone != nil {
 		if updateCodes.TelephoneCode == nil {
 			logger.Log().Error(ctx, "telephone code is nil")
@@ -100,8 +98,6 @@ func (s *service) UpdateUser(ctx context.Context, user core.UpdateUser, updateCo
 			logger.Log().Error(ctx, err.Error())
 			return nil, err
 		}
-
-		user.IsTelephoneVerified = &isVerified
 	}
 
 	retUser, err := s.userStorage.UpdateUser(ctx, user)

@@ -7,34 +7,30 @@ import (
 
 type (
 	User struct {
-		ID                  int
-		Username            string
-		Email               *string
-		FirstName           string
-		LastName            string
-		MiddleName          *string
-		Pseudonym           string
-		Telephone           *string
-		PasswordHash        string
-		IsEmailVerified     bool
-		IsTelephoneVerified bool
-		IsDeleted           bool
-		CreatedAt           time.Time
-		UpdatedAt           time.Time
+		ID           int
+		Username     string
+		Email        *string
+		FirstName    string
+		LastName     string
+		MiddleName   *string
+		Pseudonym    string
+		Telephone    *string
+		PasswordHash string
+		IsDeleted    bool
+		CreatedAt    time.Time
+		UpdatedAt    time.Time
 	}
 
 	UpdateUser struct {
-		ID                  int
-		Username            *string
-		Email               *string
-		FirstName           *string
-		LastName            *string
-		MiddleName          *string
-		Pseudonym           *string
-		Telephone           *string
-		Password            *UpdatePassword
-		IsEmailVerified     *bool
-		IsTelephoneVerified *bool
+		ID         int
+		Username   *string
+		Email      *string
+		FirstName  *string
+		LastName   *string
+		MiddleName *string
+		Pseudonym  *string
+		Telephone  *string
+		Password   *UpdatePassword
 	}
 
 	UpdateCodes struct {

@@ -250,38 +250,6 @@
           "AuthService"
         ]
       }
-    },
-    "/v1/auth/verify": {
-      "post": {
-        "operationId": "AuthService_Verify",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/authVerifyResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/authVerifyRequest"
-            }
-          }
-        ],
-        "tags": [
-          "AuthService"
-        ]
-      }
     }
   },
   "definitions": {
@@ -368,12 +336,6 @@
         "pseudonym": {
           "type": "string"
         },
-        "isEmailVerified": {
-          "type": "boolean"
-        },
-        "isTelephoneVerified": {
-          "type": "boolean"
-        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -458,12 +420,6 @@
         "pseudonym": {
           "type": "string"
         },
-        "isEmailVerified": {
-          "type": "boolean"
-        },
-        "isTelephoneVerified": {
-          "type": "boolean"
-        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -496,17 +452,6 @@
           "format": "int64"
         }
       }
-    },
-    "authVerifyRequest": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string"
-        }
-      }
-    },
-    "authVerifyResponse": {
-      "type": "object"
     },
     "protobufAny": {
       "type": "object",

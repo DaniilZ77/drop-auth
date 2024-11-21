@@ -66,11 +66,6 @@ func (s *service) RefreshToken(ctx context.Context, refreshToken string) (access
 		return nil, nil, core.ErrAlreadyDeleted
 	}
 
-	if !userFromDB.IsEmailVerified && !userFromDB.IsTelephoneVerified {
-		logger.Log().Error(ctx, core.ErrEmailAndTelephoneNotVerified.Error())
-		return nil, nil, core.ErrEmailAndTelephoneNotVerified
-	}
-
 	accessToken, err := jwt.GenerateToken(userFromDB.ID, s.authConfig)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
@@ -110,22 +105,18 @@ func (s *service) Login(ctx context.Context, user core.User) (accesstoken, refre
 	}
 
 	if user.Telephone != nil && (userFromDB.Telephone == nil || *user.Telephone != *userFromDB.Telephone) {
-		logger.Log().Error(ctx, core.ErrInvalidCredentials.Error())
+		logger.Log().Error(ctx, "telephone: %s", core.ErrInvalidCredentials.Error())
 		return nil, nil, core.ErrInvalidCredentials
 	}
 
-	if !userFromDB.IsEmailVerified && user.Email != nil {
-		logger.Log().Error(ctx, core.ErrEmailNotVerified.Error())
-		return nil, nil, core.ErrEmailNotVerified
-	}
-	if !userFromDB.IsTelephoneVerified && user.Telephone != nil {
-		logger.Log().Error(ctx, core.ErrTelephoneNotVerified.Error())
-		return nil, nil, core.ErrTelephoneNotVerified
+	if userFromDB.Email == nil && user.Email != nil {
+		logger.Log().Error(ctx, "email: %s", core.ErrInvalidCredentials.Error())
+		return nil, nil, core.ErrInvalidCredentials
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(userFromDB.PasswordHash), []byte(user.PasswordHash))
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		logger.Log().Error(ctx, "invalid password: %s", err.Error())
 		return nil, nil, core.ErrInvalidCredentials
 	}
 
@@ -167,27 +158,21 @@ func (s *service) Signup(ctx context.Context, emailCode, telephoneCode string, u
 		return nil
 	}
 
-	isEmailVerified := false
 	if user.Email != nil {
 		err := check(emailCode, *user.Email, core.Email)
 		if err != nil {
 			logger.Log().Error(ctx, err.Error())
 			return nil, err
 		}
-		isEmailVerified = true
 	}
 
-	isTelephoneVerified := false
 	if user.Telephone != nil {
 		err := check(telephoneCode, *user.Telephone, core.Telephone)
 		if err != nil {
 			logger.Log().Error(ctx, err.Error())
 			return nil, err
 		}
-		isTelephoneVerified = true
 	}
-	user.IsEmailVerified = isEmailVerified
-	user.IsTelephoneVerified = isTelephoneVerified
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
 	if err != nil {
@@ -210,7 +195,7 @@ func (s *service) Signup(ctx context.Context, emailCode, telephoneCode string, u
 	return &user, nil
 }
 
-func (s *service) ResetPassword(ctx context.Context, code string, password string) (*core.User, error) {
+func (s *service) ResetPassword(ctx context.Context, code, password string) (*core.User, error) {
 	verificationCode, err := s.verificationStorage.GetVerificationCode(ctx, code)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
@@ -245,6 +230,8 @@ func (s *service) ResetPassword(ctx context.Context, code string, password strin
 		logger.Log().Error(ctx, err.Error())
 		return nil, err
 	}
+
+	logger.Log().Debug(ctx, "user: %v", user)
 
 	return user, nil
 }

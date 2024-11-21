@@ -22,7 +22,7 @@ type App struct {
 }
 
 func New(ctx context.Context, cfg *config.Config) *App {
-	// creds, err := credentials.NewClientTLSFromFile(cfg.Cert, "")
+	// creds, err := credentials.NewClientTLSFromFile(cfg.Cert, "") nolint
 	// if err != nil {
 	// 	logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
 	// }

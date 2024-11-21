@@ -1,7 +1,10 @@
 package auth
 
 import (
+	"context"
+
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -19,18 +22,16 @@ func ToSignupResponse(user core.User) *authv1.SignupResponse {
 	}
 
 	return &authv1.SignupResponse{
-		UserId:              int64(user.ID),
-		Username:            user.Username,
-		FirstName:           user.FirstName,
-		LastName:            user.LastName,
-		MiddleName:          middleName,
-		Telephone:           telephone,
-		Email:               email,
-		Pseudonym:           user.Pseudonym,
-		IsEmailVerified:     user.IsEmailVerified,
-		IsTelephoneVerified: user.IsTelephoneVerified,
-		CreatedAt:           timestamppb.New(user.CreatedAt),
-		UpdatedAt:           timestamppb.New(user.UpdatedAt),
+		UserId:     int64(user.ID),
+		Username:   user.Username,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		MiddleName: middleName,
+		Telephone:  telephone,
+		Email:      email,
+		Pseudonym:  user.Pseudonym,
+		CreatedAt:  timestamppb.New(user.CreatedAt),
+		UpdatedAt:  timestamppb.New(user.UpdatedAt),
 	}
 }
 
@@ -99,19 +100,19 @@ func ToResetPasswordResponse(user core.User) *authv1.ResetPasswordResponse {
 		middleName = *user.MiddleName
 	}
 
+	logger.Log().Debug(context.TODO(), "created_at: %v, updated_at: %v", user.CreatedAt, user.UpdatedAt)
+
 	return &authv1.ResetPasswordResponse{
-		UserId:              int64(user.ID),
-		Username:            user.Username,
-		FirstName:           user.FirstName,
-		LastName:            user.LastName,
-		MiddleName:          middleName,
-		Telephone:           telephone,
-		Email:               email,
-		Pseudonym:           user.Pseudonym,
-		IsEmailVerified:     user.IsEmailVerified,
-		IsTelephoneVerified: user.IsTelephoneVerified,
-		CreatedAt:           timestamppb.New(user.CreatedAt),
-		UpdatedAt:           timestamppb.New(user.UpdatedAt),
+		UserId:     int64(user.ID),
+		Username:   user.Username,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		MiddleName: middleName,
+		Telephone:  telephone,
+		Email:      email,
+		Pseudonym:  user.Pseudonym,
+		CreatedAt:  timestamppb.New(user.CreatedAt),
+		UpdatedAt:  timestamppb.New(user.UpdatedAt),
 	}
 }
 

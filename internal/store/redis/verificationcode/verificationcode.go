@@ -7,7 +7,7 @@ import (
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
-	rdb "github.com/redis/go-redis/v9"
+	rdblib "github.com/redis/go-redis/v9"
 )
 
 type storage struct {
@@ -34,7 +34,7 @@ func (s *storage) GetVerificationCode(ctx context.Context, key string) (*core.Ve
 	defer cancel()
 
 	res, err := s.Client.Get(ctx, key).Bytes()
-	if err == rdb.Nil {
+	if err == rdblib.Nil {
 		return nil, core.ErrVerificationCodeNotValid
 	} else if err != nil {
 		return nil, err
@@ -53,12 +53,12 @@ func (s *storage) SetVerificationCode(ctx context.Context, key string, val core.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	valJson, err := json.Marshal(val)
+	valJSON, err := json.Marshal(val)
 	if err != nil {
 		return err
 	}
 
-	if err := s.Client.Set(ctx, key, valJson, expiresIn).Err(); err != nil {
+	if err := s.Client.Set(ctx, key, valJSON, expiresIn).Err(); err != nil {
 		return err
 	}
 

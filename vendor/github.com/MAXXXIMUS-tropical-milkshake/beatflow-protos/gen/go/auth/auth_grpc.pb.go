@@ -25,7 +25,6 @@ const (
 	AuthService_ValidateToken_FullMethodName = "/auth.AuthService/ValidateToken"
 	AuthService_SendEmail_FullMethodName     = "/auth.AuthService/SendEmail"
 	AuthService_SendSMS_FullMethodName       = "/auth.AuthService/SendSMS"
-	AuthService_Verify_FullMethodName        = "/auth.AuthService/Verify"
 	AuthService_ResetPassword_FullMethodName = "/auth.AuthService/ResetPassword"
 )
 
@@ -39,7 +38,6 @@ type AuthServiceClient interface {
 	ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error)
 	SendEmail(ctx context.Context, in *SendEmailRequest, opts ...grpc.CallOption) (*SendEmailResponse, error)
 	SendSMS(ctx context.Context, in *SendSMSRequest, opts ...grpc.CallOption) (*SendSMSResponse, error)
-	Verify(ctx context.Context, in *VerifyRequest, opts ...grpc.CallOption) (*VerifyResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
 }
 
@@ -111,16 +109,6 @@ func (c *authServiceClient) SendSMS(ctx context.Context, in *SendSMSRequest, opt
 	return out, nil
 }
 
-func (c *authServiceClient) Verify(ctx context.Context, in *VerifyRequest, opts ...grpc.CallOption) (*VerifyResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(VerifyResponse)
-	err := c.cc.Invoke(ctx, AuthService_Verify_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *authServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResetPasswordResponse)
@@ -141,7 +129,6 @@ type AuthServiceServer interface {
 	ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error)
 	SendEmail(context.Context, *SendEmailRequest) (*SendEmailResponse, error)
 	SendSMS(context.Context, *SendSMSRequest) (*SendSMSResponse, error)
-	Verify(context.Context, *VerifyRequest) (*VerifyResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -170,9 +157,6 @@ func (UnimplementedAuthServiceServer) SendEmail(context.Context, *SendEmailReque
 }
 func (UnimplementedAuthServiceServer) SendSMS(context.Context, *SendSMSRequest) (*SendSMSResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSMS not implemented")
-}
-func (UnimplementedAuthServiceServer) Verify(context.Context, *VerifyRequest) (*VerifyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Verify not implemented")
 }
 func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetPassword not implemented")
@@ -306,24 +290,6 @@ func _AuthService_SendSMS_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Verify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VerifyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).Verify(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_Verify_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Verify(ctx, req.(*VerifyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AuthService_ResetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResetPasswordRequest)
 	if err := dec(in); err != nil {
@@ -372,10 +338,6 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendSMS",
 			Handler:    _AuthService_SendSMS_Handler,
-		},
-		{
-			MethodName: "Verify",
-			Handler:    _AuthService_Verify_Handler,
 		},
 		{
 			MethodName: "ResetPassword",
