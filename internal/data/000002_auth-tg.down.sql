@@ -1,0 +1,1 @@
+drop table if exists "external_users" cascade;

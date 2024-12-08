@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mailhog-auth
+  name: mailhog-auth
+spec:
+  type: NodePort
+  ports:
+    - name: "8025"
+      port: 8025
+      targetPort: 8025
+      nodePort: 30025
+    - name: "1025"
+      port: 1025
+      targetPort: 1025
+  selector:
+    app: mailhog-auth

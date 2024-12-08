@@ -235,3 +235,44 @@ func (s *service) ResetPassword(ctx context.Context, code, password string) (*co
 
 	return user, nil
 }
+
+func (s *service) LoginExternal(ctx context.Context, user core.User, externalUser core.ExternalUser, provider core.AuthProvider, isValid bool) (accessToken *string, refreshToken *string, err error) {
+	generateTokens := func(userID int) (*string, *string, error) {
+		accessToken, err := jwt.GenerateToken(userID, s.authConfig)
+		if err != nil {
+			logger.Log().Error(ctx, err.Error())
+			return nil, nil, err
+		}
+
+		refreshToken := uuid.New().String()
+		err = s.refreshTokenStorage.SetRefreshToken(ctx, userID, refreshToken, time.Minute*time.Duration(s.authConfig.RefreshTokenTTL))
+		if err != nil {
+			logger.Log().Info(ctx, err.Error())
+			return nil, nil, err
+		}
+		return accessToken, &refreshToken, nil
+	}
+
+	userFromDB, err := s.userStorage.GetUserByExternalID(ctx, externalUser.ExternalID)
+	if err == nil {
+		return generateTokens(userFromDB.UserID)
+	}
+
+	if errors.Is(err, core.ErrUserNotFound) {
+		if !isValid {
+			logger.Log().Debug(ctx, err.Error())
+			return nil, nil, core.ErrValidationFailed
+		}
+	} else {
+		logger.Log().Error(ctx, err.Error())
+		return nil, nil, err
+	}
+
+	userID, err := s.userStorage.AddExternalUser(ctx, user, externalUser)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, nil, err
+	}
+
+	return generateTokens(userID)
+}

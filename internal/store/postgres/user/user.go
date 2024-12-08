@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
@@ -360,4 +362,92 @@ func (s *store) DeleteUser(ctx context.Context, userID int) error {
 	}
 
 	return nil
+}
+
+func (s *store) AddExternalUser(ctx context.Context, user core.User, externalUser core.ExternalUser) (userID int, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	tx, err := s.DB.Begin()
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return 0, err
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback() // nolint
+		} else {
+			tx.Commit() // nolint
+		}
+	}()
+
+	stmt := `INSERT INTO users
+	(username,
+	first_name,
+	last_name,
+	middle_name,
+	pseudonym,
+	password_hash)
+	VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+
+	err = tx.QueryRowContext(
+		ctx,
+		stmt,
+		fmt.Sprintf("%s%d", user.Username, rand.Int()),
+		user.FirstName,
+		user.LastName,
+		user.MiddleName,
+		user.Pseudonym,
+		user.PasswordHash,
+	).Scan(&userID)
+
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		var pg *pgconn.PgError
+		if ok := errors.As(err, &pg); ok && pg.ConstraintName == constraints.UniqueUsernameConstraint {
+			return 0, core.ErrUsernameAlreadyExists
+		}
+		return 0, err
+	}
+
+	stmt = `INSERT INTO external_users
+	(external_id, user_id, auth_provider)
+	VALUES ($1, $2, $3)`
+
+	_, err = tx.ExecContext(ctx, stmt, &externalUser.ExternalID, &userID, &externalUser.AuthProvider)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		var pg *pgconn.PgError
+		if ok := errors.As(err, &pg); ok && pg.ConstraintName == constraints.UniqueUserIDAuthProviderConstraint {
+			return 0, core.ErrUserIDAuthProviderAlreadyExists
+		}
+		return 0, err
+	}
+
+	return userID, err
+}
+
+func (s *store) GetUserByExternalID(ctx context.Context, externalID int) (user *core.ExternalUser, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	stmt := `SELECT id, external_id, user_id, auth_provider FROM external_users WHERE external_id = $1`
+
+	externalUser := new(core.ExternalUser)
+	err = s.DB.QueryRowContext(ctx, stmt, externalID).Scan(
+		&externalUser.ID,
+		&externalUser.ExternalID,
+		&externalUser.UserID,
+		&externalUser.AuthProvider,
+	)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, core.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return externalUser, nil
 }

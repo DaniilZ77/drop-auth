@@ -21,6 +21,13 @@ type (
 		UpdatedAt    time.Time
 	}
 
+	ExternalUser struct {
+		ID           int
+		ExternalID   int
+		UserID       int
+		AuthProvider string
+	}
+
 	UpdateUser struct {
 		ID         int
 		Username   *string
@@ -51,11 +58,13 @@ type (
 
 	UserStore interface {
 		AddUser(ctx context.Context, user User) (userID int, err error)
+		GetUserByExternalID(ctx context.Context, externalID int) (user *ExternalUser, err error)
 		GetUserByUsername(ctx context.Context, username string) (user *User, err error)
 		GetUserByID(ctx context.Context, userID int) (user *User, err error)
 		GetUserByEmail(ctx context.Context, email string) (user *User, err error)
 		GetUserByTelephone(ctx context.Context, telephone string) (user *User, err error)
 		UpdateUser(cxt context.Context, user UpdateUser) (*User, error)
 		DeleteUser(ctx context.Context, userID int) error
+		AddExternalUser(ctx context.Context, user User, externalUser ExternalUser) (userID int, err error)
 	}
 )

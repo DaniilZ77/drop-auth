@@ -89,6 +89,38 @@
         ]
       }
     },
+    "/v1/auth/login/telegram": {
+      "post": {
+        "operationId": "AuthService_LoginTelegram",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/authLoginResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/authLoginTelegramRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
     "/v1/auth/password/reset": {
       "post": {
         "operationId": "AuthService_ResetPassword",
@@ -274,6 +306,17 @@
           "type": "string"
         },
         "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "authLoginTelegramRequest": {
+      "type": "object",
+      "properties": {
+        "pseudonym": {
+          "type": "string"
+        },
+        "middleName": {
           "type": "string"
         }
       }

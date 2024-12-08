@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mailhog-auth
+  name: mailhog-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailhog-auth
+  template:
+    metadata:
+      labels:
+        app: mailhog-auth
+    spec:
+      containers:
+        - env:
+            - name: MAILHOG_HOST
+            - name: MAILHOG_MAILER
+              value: smtp
+            - name: MAILHOG_PORT
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          image: mailhog/mailhog
+          name: mailhog-auth
+          ports:
+            - containerPort: 8025
+              protocol: TCP
+            - containerPort: 1025
+              protocol: TCP
+      restartPolicy: Always

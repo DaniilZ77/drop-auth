@@ -10,7 +10,7 @@ PG_URL=postgres://postgres:postgres@localhost:5432/drop-auth
 
 run: ### run app
 	go run cmd/auth/main.go -db_url '$(PG_URL)' \
-	-grpc_port localhost:50051 -http_port localhost:8080 -log_level debug -cert ./tls/cert.pem \
+	-grpc_port localhost:50051 -tma_secret 5768337691:AAGDAe6rjxu1cUgxK4BizYi--Utc3J9v5AU -http_port localhost:8080 -log_level debug -cert ./tls/cert.pem \
 	-key ./tls/key.pem -jwt_secret secret \
 	-access_token_ttl 15 -refresh_token_ttl 14400 \
 	-read_timeout 5 -smtp_port 1025 -smtp_host localhost -smtp_sender drop@yandex.ru \
@@ -29,7 +29,7 @@ coverage: ### generate coverage report
 	go test ${TEST_FLAGS} -coverprofile=coverage.out ./...
 	go tool cover -html="coverage.out"
 
-MIGRATION_NAME=initial
+MIGRATION_NAME=auth-tg
 
 migrate-new: ### create a new migration
 	migrate create -ext sql -dir ./internal/data -seq ${MIGRATION_NAME}

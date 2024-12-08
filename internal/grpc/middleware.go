@@ -6,13 +6,14 @@ import (
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	initdata "github.com/telegram-mini-apps/init-data-golang"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-func EnsureValidToken(secret string, requireAuth map[string]bool) grpc.UnaryServerInterceptor {
+func EnsureValidToken(secrets map[string]string, requireAuth map[string]bool) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		if !requireAuth[info.FullMethod] {
 			return handler(ctx, req)
@@ -30,16 +31,40 @@ func EnsureValidToken(secret string, requireAuth map[string]bool) grpc.UnaryServ
 			return nil, status.Error(codes.Unauthenticated, core.ErrUnauthorized.Error())
 		}
 
-		tokenString := strings.TrimPrefix(authorization[0], "Bearer")
-		tokenString = strings.TrimSpace(tokenString)
-
-		id, err := ValidToken(ctx, tokenString, secret)
-		if err != nil {
-			logger.Log().Debug(ctx, err.Error())
+		parts := strings.Split(authorization[0], " ")
+		if len(parts) < 2 {
+			logger.Log().Debug(ctx, "not enough args: %v", parts)
 			return nil, status.Error(codes.Unauthenticated, core.ErrUnauthorized.Error())
 		}
 
-		ctx = context.WithValue(ctx, userIDContextKey, *id)
+		provider := strings.ToLower(parts[0])
+		switch provider {
+		case "bearer":
+			tokenString := strings.TrimSpace(parts[1])
+
+			id, err := ValidToken(ctx, tokenString, secrets["bearer"])
+			if err != nil {
+				logger.Log().Debug(ctx, err.Error())
+				return nil, status.Error(codes.Unauthenticated, core.ErrUnauthorized.Error())
+			}
+
+			ctx = context.WithValue(ctx, userIDContextKey, *id)
+		case "tma":
+			initData := parts[1]
+			// should be time.Hour, for testing -1
+			if err := initdata.Validate(initData, secrets["tma"], -1); err != nil {
+				logger.Log().Debug(ctx, err.Error())
+				return nil, status.Error(codes.Unauthenticated, core.ErrUnauthorized.Error())
+			}
+
+			parsedInitData, err := initdata.Parse(initData)
+			if err != nil {
+				logger.Log().Error(ctx, err.Error())
+				return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+			}
+
+			ctx = context.WithValue(ctx, initDataContextKey, parsedInitData)
+		}
 
 		return handler(ctx, req)
 	}

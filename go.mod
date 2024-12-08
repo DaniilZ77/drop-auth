@@ -10,7 +10,7 @@ require (
 require github.com/golang-jwt/jwt v3.2.2+incompatible
 
 require (
-	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.59
+	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.63
 	github.com/go-mail/mail/v2 v2.3.0
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
@@ -19,6 +19,7 @@ require (
 	github.com/redis/go-redis/v9 v9.6.2
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.9.0
+	github.com/telegram-mini-apps/init-data-golang v1.2.0
 )
 
 require (

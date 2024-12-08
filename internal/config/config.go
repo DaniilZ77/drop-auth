@@ -55,6 +55,7 @@ type (
 		JWTSecret       string
 		AccessTokenTTL  int
 		RefreshTokenTTL int
+		TmaSecret       string
 	}
 )
 
@@ -69,10 +70,11 @@ func NewConfig() (*Config, error) {
 	cert := flag.String("cert", "", "path to cert file")
 	key := flag.String("key", "", "path to key file")
 
-	// JWT
+	// JWT and Tma secrets and config
 	jwtSecret := flag.String("jwt_secret", "", "jwt secret")
 	accessTokenTTL := flag.Int("access_token_ttl", 2, "access token ttl")
 	refreshTokenTTL := flag.Int("refresh_token_ttl", 14400, "refresh token ttl")
+	tmaSecret := flag.String("tma_secret", "", "tma secret")
 
 	// Redis
 	redisAddr := flag.String("redis_addr", "localhost:6379", "redis address")
@@ -114,6 +116,7 @@ func NewConfig() (*Config, error) {
 			JWTSecret:       *jwtSecret,
 			AccessTokenTTL:  *accessTokenTTL,
 			RefreshTokenTTL: *refreshTokenTTL,
+			TmaSecret:       *tmaSecret,
 		},
 		SMPT: SMPT{
 			Host:     *smptHost,

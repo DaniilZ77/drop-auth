@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: backend-auth
+  name: backend-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-auth
+  template:
+    metadata:
+      labels:
+        app: backend-auth
+    spec:
+      containers:
+        - args:
+            - "sh"
+            - "-c"
+            - "./bin/migrator -db_url postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${POSTGRES_DB} -migrations_path ${MIGRATIONS_PATH} && ./bin/drop-auth -db_url postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${POSTGRES_DB} -grpc_port ${GRPC_PORT} -http_port ${HTTP_PORT} -redis_password ${REDIS_PASSWORD} -redis_addr ${REDIS_ADDRESS} -cert ${CERT} -key ${KEY} -jwt_secret ${JWT_SECRET} -access_token_ttl ${ACCESS_TOKEN_TTL} -refresh_token_ttl ${REFRESH_TOKEN_TTL} -read_timeout ${READ_TIMEOUT} -log_level ${LOG_LEVEL} -smtp_port ${SMTP_PORT} -smtp_host ${SMTP_HOST} -smtp_sender ${SMTP_SENDER} -sms_sender ${SMS_SENDER}"
+          env:
+            - name: ACCESS_TOKEN_TTL
+              valueFrom:
+                configMapKeyRef:
+                  key: ACCESS_TOKEN_TTL
+                  name: backend-auth-env
+            - name: CERT
+              valueFrom:
+                configMapKeyRef:
+                  key: CERT
+                  name: backend-auth-env
+            - name: GRPC_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: GRPC_PORT
+                  name: backend-auth-env
+            - name: HTTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: HTTP_PORT
+                  name: backend-auth-env
+            - name: JWT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  key: JWT_SECRET
+                  name: backend-auth-env
+            - name: KEY
+              valueFrom:
+                configMapKeyRef:
+                  key: KEY
+                  name: backend-auth-env
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  key: LOG_LEVEL
+                  name: backend-auth-env
+            - name: MIGRATIONS_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: MIGRATIONS_PATH
+                  name: backend-auth-env
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_DB
+                  name: backend-auth-env
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: backend-auth-env
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_USER
+                  name: backend-auth-env
+            - name: READ_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  key: READ_TIMEOUT
+                  name: backend-auth-env
+            - name: REDIS_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_ADDRESS
+                  name: backend-auth-env
+            - name: REDIS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_PASSWORD
+                  name: backend-auth-env
+            - name: REFRESH_TOKEN_TTL
+              valueFrom:
+                configMapKeyRef:
+                  key: REFRESH_TOKEN_TTL
+                  name: backend-auth-env
+            - name: SMS_SENDER
+              valueFrom:
+                configMapKeyRef:
+                  key: SMS_SENDER
+                  name: backend-auth-env
+            - name: SMTP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: SMTP_HOST
+                  name: backend-auth-env
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: SMTP_PORT
+                  name: backend-auth-env
+            - name: SMTP_SENDER
+              valueFrom:
+                configMapKeyRef:
+                  key: SMTP_SENDER
+                  name: backend-auth-env
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          image: daniilz77/drop-auth:1.1
+          name: drop-auth
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 50051
+              protocol: TCP
+      restartPolicy: Always

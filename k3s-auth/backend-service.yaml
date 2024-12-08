@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: backend-auth
+  name: backend-auth
+spec:
+  type: NodePort
+  ports:
+    - name: "8080"
+      port: 8080
+      targetPort: 8080
+      nodePort: 30021
+    - name: "50051"
+      port: 50051
+      targetPort: 50051
+  selector:
+    app: backend-auth

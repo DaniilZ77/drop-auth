@@ -1,4 +1,4 @@
-# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.59
+# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.0.63
 ## explicit; go 1.23.1
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user
@@ -117,6 +117,9 @@ github.com/stretchr/objx
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
+# github.com/telegram-mini-apps/init-data-golang v1.2.0
+## explicit; go 1.18
+github.com/telegram-mini-apps/init-data-golang
 # go.uber.org/atomic v1.7.0
 ## explicit; go 1.13
 go.uber.org/atomic
