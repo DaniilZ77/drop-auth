@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
@@ -394,14 +392,13 @@ func (s *store) AddExternalUser(ctx context.Context, user core.User, externalUse
 	err = tx.QueryRowContext(
 		ctx,
 		stmt,
-		fmt.Sprintf("%s%d", user.Username, rand.Int()),
+		user.Username,
 		user.FirstName,
 		user.LastName,
 		user.MiddleName,
 		user.Pseudonym,
 		user.PasswordHash,
 	).Scan(&userID)
-
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		var pg *pgconn.PgError

@@ -236,7 +236,7 @@ func (s *service) ResetPassword(ctx context.Context, code, password string) (*co
 	return user, nil
 }
 
-func (s *service) LoginExternal(ctx context.Context, user core.User, externalUser core.ExternalUser, provider core.AuthProvider, isValid bool) (accessToken *string, refreshToken *string, err error) {
+func (s *service) LoginExternal(ctx context.Context, user core.User, externalUser core.ExternalUser, provider core.AuthProvider, isValid bool) (accessToken, refreshToken *string, err error) {
 	generateTokens := func(userID int) (*string, *string, error) {
 		accessToken, err := jwt.GenerateToken(userID, s.authConfig)
 		if err != nil {
@@ -267,6 +267,13 @@ func (s *service) LoginExternal(ctx context.Context, user core.User, externalUse
 		logger.Log().Error(ctx, err.Error())
 		return nil, nil, err
 	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(uuid.New().String()), bcrypt.DefaultCost)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, nil, err
+	}
+	user.PasswordHash = string(passwordHash)
 
 	userID, err := s.userStorage.AddExternalUser(ctx, user, externalUser)
 	if err != nil {

@@ -219,6 +219,11 @@ func (s *server) LoginTelegram(ctx context.Context, req *authv1.LoginTelegramReq
 	accessToken, refreshToken, err := s.authService.LoginExternal(ctx, *user, *externalUser, core.TelegramAuthProvider, v.Valid())
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, core.ErrValidationFailed) {
+			return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
+		} else if helper.OneOf(err, core.ErrUserIDAuthProviderAlreadyExists, core.ErrUsernameAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
 	}
 

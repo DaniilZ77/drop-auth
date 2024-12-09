@@ -90,6 +90,77 @@ func (_c *MockAuthService_Login_Call) RunAndReturn(run func(context.Context, cor
 	return _c
 }
 
+// LoginExternal provides a mock function with given fields: ctx, user, externalUser, provider, isValid
+func (_m *MockAuthService) LoginExternal(ctx context.Context, user core.User, externalUser core.ExternalUser, provider core.AuthProvider, isValid bool) (*string, *string, error) {
+	ret := _m.Called(ctx, user, externalUser, provider, isValid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LoginExternal")
+	}
+
+	var r0 *string
+	var r1 *string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, core.User, core.ExternalUser, core.AuthProvider, bool) (*string, *string, error)); ok {
+		return rf(ctx, user, externalUser, provider, isValid)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, core.User, core.ExternalUser, core.AuthProvider, bool) *string); ok {
+		r0 = rf(ctx, user, externalUser, provider, isValid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, core.User, core.ExternalUser, core.AuthProvider, bool) *string); ok {
+		r1 = rf(ctx, user, externalUser, provider, isValid)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*string)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, core.User, core.ExternalUser, core.AuthProvider, bool) error); ok {
+		r2 = rf(ctx, user, externalUser, provider, isValid)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// MockAuthService_LoginExternal_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoginExternal'
+type MockAuthService_LoginExternal_Call struct {
+	*mock.Call
+}
+
+// LoginExternal is a helper method to define mock.On call
+//   - ctx context.Context
+//   - user core.User
+//   - externalUser core.ExternalUser
+//   - provider core.AuthProvider
+//   - isValid bool
+func (_e *MockAuthService_Expecter) LoginExternal(ctx interface{}, user interface{}, externalUser interface{}, provider interface{}, isValid interface{}) *MockAuthService_LoginExternal_Call {
+	return &MockAuthService_LoginExternal_Call{Call: _e.mock.On("LoginExternal", ctx, user, externalUser, provider, isValid)}
+}
+
+func (_c *MockAuthService_LoginExternal_Call) Run(run func(ctx context.Context, user core.User, externalUser core.ExternalUser, provider core.AuthProvider, isValid bool)) *MockAuthService_LoginExternal_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(core.User), args[2].(core.ExternalUser), args[3].(core.AuthProvider), args[4].(bool))
+	})
+	return _c
+}
+
+func (_c *MockAuthService_LoginExternal_Call) Return(accessToken *string, refreshToken *string, err error) *MockAuthService_LoginExternal_Call {
+	_c.Call.Return(accessToken, refreshToken, err)
+	return _c
+}
+
+func (_c *MockAuthService_LoginExternal_Call) RunAndReturn(run func(context.Context, core.User, core.ExternalUser, core.AuthProvider, bool) (*string, *string, error)) *MockAuthService_LoginExternal_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RefreshToken provides a mock function with given fields: ctx, refreshToken
 func (_m *MockAuthService) RefreshToken(ctx context.Context, refreshToken string) (*string, *string, error) {
 	ret := _m.Called(ctx, refreshToken)
