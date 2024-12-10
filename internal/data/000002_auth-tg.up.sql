@@ -1,6 +1,6 @@
 create type "auth_providers" as enum ('tg');
 
-create table "external_users" (
+create table if not exists "external_users" (
     id serial primary key,
     external_id integer not null,
     user_id integer references "users" ("id"),
