@@ -3,6 +3,7 @@ package gprc
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
@@ -51,8 +52,7 @@ func EnsureValidToken(secrets map[string]string, requireAuth map[string]bool) gr
 			ctx = context.WithValue(ctx, userIDContextKey, *id)
 		case "tma":
 			initData := parts[1]
-			// should be time.Hour, for testing -1
-			if err := initdata.Validate(initData, secrets["tma"], -1); err != nil {
+			if err := initdata.Validate(initData, secrets["tma"], time.Hour); err != nil {
 				logger.Log().Debug(ctx, err.Error())
 				return nil, status.Error(codes.Unauthenticated, core.ErrUnauthorized.Error())
 			}

@@ -221,7 +221,7 @@ func (s *server) LoginTelegram(ctx context.Context, req *authv1.LoginTelegramReq
 		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, core.ErrValidationFailed) {
 			return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
-		} else if helper.OneOf(err, core.ErrUserIDAuthProviderAlreadyExists, core.ErrUsernameAlreadyExists) {
+		} else if errors.Is(err, core.ErrUsernameAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
 		return nil, status.Error(codes.Internal, core.ErrInternal.Error())

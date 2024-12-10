@@ -415,10 +415,6 @@ func (s *store) AddExternalUser(ctx context.Context, user core.User, externalUse
 	_, err = tx.ExecContext(ctx, stmt, &externalUser.ExternalID, &userID, &externalUser.AuthProvider)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
-		var pg *pgconn.PgError
-		if ok := errors.As(err, &pg); ok && pg.ConstraintName == constraints.UniqueUserIDAuthProviderConstraint {
-			return 0, core.ErrUserIDAuthProviderAlreadyExists
-		}
 		return 0, err
 	}
 
