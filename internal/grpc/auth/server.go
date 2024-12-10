@@ -204,3 +204,28 @@ func (s *server) ResetPassword(ctx context.Context, req *authv1.ResetPasswordReq
 
 	return auth.ToResetPasswordResponse(*user), nil
 }
+
+func (s *server) LoginTelegram(ctx context.Context, req *authv1.LoginTelegramRequest) (*authv1.LoginResponse, error) {
+	v := validator.New()
+	model.ValidateLoginTelegramRequest(v, req)
+
+	user, externalUser, err := helper.GetInitDataFromContext(ctx)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, status.Error(codes.Unauthenticated, core.ErrUnauthorized.Error())
+	}
+	auth.FromLoginTelegramRequest(req, user)
+
+	accessToken, refreshToken, err := s.authService.LoginExternal(ctx, *user, *externalUser, core.TelegramAuthProvider, v.Valid())
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, core.ErrValidationFailed) {
+			return nil, helper.WithDetails(codes.InvalidArgument, core.ErrValidationFailed, v.Errors)
+		} else if errors.Is(err, core.ErrUsernameAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
+		return nil, status.Error(codes.Internal, core.ErrInternal.Error())
+	}
+
+	return auth.ToLoginResponse(*accessToken, *refreshToken), nil
+}

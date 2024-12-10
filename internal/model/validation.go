@@ -28,12 +28,12 @@ func ValidateSignupRequest(v *validator.Validator, req *authv1.SignupRequest) {
 		validateCode(v, req.GetTelephone().GetCode())
 	}
 	if req.GetMiddleName() != "" {
-		v.Check(validator.Between(len(req.GetMiddleName()), 2, 128), "middle_name", "length must be between 2 and 128")
+		validateName(v, "middle_name", req.GetMiddleName())
 	}
 	validateUsername(v, req.GetUsername())
 	v.Check(validator.Between(len(req.GetFirstName()), 2, 128), "first_name", "length must be between 2 and 128")
 	v.Check(validator.Between(len(req.GetLastName()), 2, 128), "last_name", "length must be between 2 and 128")
-	v.Check(validator.Between(len(req.GetPseudonym()), 2, 32), "pseudonym", "length must be between 2 and 32")
+	validatePseudonym(v, req.GetPseudonym())
 	validatePassword(v, req.GetPassword())
 }
 
@@ -62,6 +62,13 @@ func ValidateUpdateUserRequest(v *validator.Validator, req *userv1.UpdateUserReq
 	}
 }
 
+func ValidateLoginTelegramRequest(v *validator.Validator, req *authv1.LoginTelegramRequest) {
+	v.Check(validator.Between(len(req.GetPseudonym()), 2, 32), "pseudonym", "length must be between 2 and 32")
+	if req.GetMiddleName() != "" {
+		validateName(v, "middle_name", req.GetMiddleName())
+	}
+}
+
 func ValidateResetPassword(v *validator.Validator, req *authv1.ResetPasswordRequest) {
 	validateCode(v, req.GetCode())
 	validatePassword(v, req.GetPassword())
@@ -77,6 +84,10 @@ func ValidateSendEmailRequest(v *validator.Validator, req *authv1.SendEmailReque
 
 func ValidateSendSMSRequest(v *validator.Validator, req *authv1.SendSMSRequest) {
 	validatePhone(v, req.GetTelephone())
+}
+
+func validatePseudonym(v *validator.Validator, pseudonym string) {
+	v.Check(validator.Between(len(pseudonym), 2, 32), "pseudonym", "length must be between 2 and 32")
 }
 
 func validateCode(v *validator.Validator, code string) {

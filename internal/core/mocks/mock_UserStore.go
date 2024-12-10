@@ -22,6 +22,64 @@ func (_m *MockUserStore) EXPECT() *MockUserStore_Expecter {
 	return &MockUserStore_Expecter{mock: &_m.Mock}
 }
 
+// AddExternalUser provides a mock function with given fields: ctx, user, externalUser
+func (_m *MockUserStore) AddExternalUser(ctx context.Context, user core.User, externalUser core.ExternalUser) (int, error) {
+	ret := _m.Called(ctx, user, externalUser)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddExternalUser")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, core.User, core.ExternalUser) (int, error)); ok {
+		return rf(ctx, user, externalUser)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, core.User, core.ExternalUser) int); ok {
+		r0 = rf(ctx, user, externalUser)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, core.User, core.ExternalUser) error); ok {
+		r1 = rf(ctx, user, externalUser)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockUserStore_AddExternalUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddExternalUser'
+type MockUserStore_AddExternalUser_Call struct {
+	*mock.Call
+}
+
+// AddExternalUser is a helper method to define mock.On call
+//   - ctx context.Context
+//   - user core.User
+//   - externalUser core.ExternalUser
+func (_e *MockUserStore_Expecter) AddExternalUser(ctx interface{}, user interface{}, externalUser interface{}) *MockUserStore_AddExternalUser_Call {
+	return &MockUserStore_AddExternalUser_Call{Call: _e.mock.On("AddExternalUser", ctx, user, externalUser)}
+}
+
+func (_c *MockUserStore_AddExternalUser_Call) Run(run func(ctx context.Context, user core.User, externalUser core.ExternalUser)) *MockUserStore_AddExternalUser_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(core.User), args[2].(core.ExternalUser))
+	})
+	return _c
+}
+
+func (_c *MockUserStore_AddExternalUser_Call) Return(userID int, err error) *MockUserStore_AddExternalUser_Call {
+	_c.Call.Return(userID, err)
+	return _c
+}
+
+func (_c *MockUserStore_AddExternalUser_Call) RunAndReturn(run func(context.Context, core.User, core.ExternalUser) (int, error)) *MockUserStore_AddExternalUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AddUser provides a mock function with given fields: ctx, user
 func (_m *MockUserStore) AddUser(ctx context.Context, user core.User) (int, error) {
 	ret := _m.Called(ctx, user)
@@ -181,6 +239,65 @@ func (_c *MockUserStore_GetUserByEmail_Call) Return(user *core.User, err error) 
 }
 
 func (_c *MockUserStore_GetUserByEmail_Call) RunAndReturn(run func(context.Context, string) (*core.User, error)) *MockUserStore_GetUserByEmail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetUserByExternalID provides a mock function with given fields: ctx, externalID
+func (_m *MockUserStore) GetUserByExternalID(ctx context.Context, externalID int) (*core.ExternalUser, error) {
+	ret := _m.Called(ctx, externalID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserByExternalID")
+	}
+
+	var r0 *core.ExternalUser
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int) (*core.ExternalUser, error)); ok {
+		return rf(ctx, externalID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int) *core.ExternalUser); ok {
+		r0 = rf(ctx, externalID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.ExternalUser)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, externalID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockUserStore_GetUserByExternalID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserByExternalID'
+type MockUserStore_GetUserByExternalID_Call struct {
+	*mock.Call
+}
+
+// GetUserByExternalID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - externalID int
+func (_e *MockUserStore_Expecter) GetUserByExternalID(ctx interface{}, externalID interface{}) *MockUserStore_GetUserByExternalID_Call {
+	return &MockUserStore_GetUserByExternalID_Call{Call: _e.mock.On("GetUserByExternalID", ctx, externalID)}
+}
+
+func (_c *MockUserStore_GetUserByExternalID_Call) Run(run func(ctx context.Context, externalID int)) *MockUserStore_GetUserByExternalID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *MockUserStore_GetUserByExternalID_Call) Return(user *core.ExternalUser, err error) *MockUserStore_GetUserByExternalID_Call {
+	_c.Call.Return(user, err)
+	return _c
+}
+
+func (_c *MockUserStore_GetUserByExternalID_Call) RunAndReturn(run func(context.Context, int) (*core.ExternalUser, error)) *MockUserStore_GetUserByExternalID_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -3,5 +3,6 @@ package gprc
 type contextKey string
 
 const (
-	userIDContextKey = contextKey("id")
+	userIDContextKey   = contextKey("id")
+	initDataContextKey = contextKey("init-data")
 )

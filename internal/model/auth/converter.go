@@ -49,6 +49,16 @@ func ToLoginResponse(accessToken, refreshToken string) *authv1.LoginResponse {
 	}
 }
 
+func FromLoginTelegramRequest(req *authv1.LoginTelegramRequest, user *core.User) {
+	var middleName *string
+	if req.GetMiddleName() != "" {
+		middleName = &req.MiddleName
+	}
+
+	user.Pseudonym = req.GetPseudonym()
+	user.MiddleName = middleName
+}
+
 func FromLoginRequest(req *authv1.LoginRequest) *core.User {
 	var email, telephone *string
 	if req.GetEmail() != "" {

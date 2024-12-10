@@ -41,6 +41,7 @@ func New(
 		"/user.UserService/UpdateUser":    true,
 		"/user.UserService/GetUser":       false,
 		"/user.UserService/DeleteUser":    true,
+		"/auth.AuthService/LoginTelegram": true,
 	}
 
 	opts := []grpc.ServerOption{}
@@ -62,10 +63,15 @@ func New(
 		}),
 	}
 
+	secrets := map[string]string{
+		"bearer": cfg.JWTSecret,
+		"tma":    cfg.TmaSecret,
+	}
+
 	opts = append(opts, grpc.ChainUnaryInterceptor(
 		recovery.UnaryServerInterceptor(recoveryOpts...),
 		logging.UnaryServerInterceptor(interceptorLogger(logger.Log()), loggingOpts...),
-		middleware.EnsureValidToken(cfg.JWTSecret, requireAuth),
+		middleware.EnsureValidToken(secrets, requireAuth),
 	))
 
 	// TLS nolint

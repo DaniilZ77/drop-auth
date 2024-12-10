@@ -7,6 +7,7 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/core"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/golang-jwt/jwt"
+	initdata "github.com/telegram-mini-apps/init-data-golang"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -73,4 +74,24 @@ func OneOf(e error, errs ...error) bool {
 	}
 
 	return false
+}
+
+func GetInitDataFromContext(ctx context.Context) (*core.User, *core.ExternalUser, error) {
+	initData, ok := ctx.Value(initDataContextKey).(initdata.InitData)
+	if !ok {
+		logger.Log().Debug(ctx, "init data is not provided")
+		return nil, nil, core.ErrUnauthorized
+	}
+
+	user := new(core.User)
+	externalUser := new(core.ExternalUser)
+
+	externalUser.AuthProvider = string(core.TelegramAuthProvider)
+	externalUser.ExternalID = int(initData.User.ID)
+
+	user.Username = initData.User.Username
+	user.FirstName = initData.User.FirstName
+	user.LastName = initData.User.LastName
+
+	return user, externalUser, nil
 }

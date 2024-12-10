@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis-auth
+  name: redis-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-auth
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis-auth
+    spec:
+      containers:
+        - args:
+            - "/bin/sh"
+            - "-c"
+            - "redis-server --requirepass ${REDIS_PASSWORD}"
+          env:
+            - name: REDIS_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_ADDRESS
+                  name: backend-auth-env
+            - name: REDIS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_PASSWORD
+                  name: backend-auth-env
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          image: redis:alpine
+          livenessProbe:
+            exec:
+              command:
+                - "redis-cli"
+                - "-a"
+                - "${REDIS_PASSWORD}"
+                - "ping"
+            failureThreshold: 3
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 10
+          name: redis-auth
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/redis/data
+              name: redis-auth-data
+      restartPolicy: Always
+      volumes:
+        - name: redis-auth-data
+          persistentVolumeClaim:
+            claimName: redis-auth-data
