@@ -19,6 +19,7 @@ data:
   SMTP_HOST: mailhog-auth
   SMTP_PORT: "1025"
   SMTP_SENDER: drop@yandex.com
+  TMA_SECRET: "5768337691:AAGDAe6rjxu1cUgxK4BizYi--Utc3J9v5AU"
 kind: ConfigMap
 metadata:
   labels:
