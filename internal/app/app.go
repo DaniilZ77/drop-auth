@@ -9,19 +9,16 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/auth"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/user"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service/verification"
-	userstore "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/postgres/user"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/refreshtoken"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store/redis/verificationcode"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
+	userservice "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service"
+	userstore "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/store"
 )
 
 type App struct {
 	GRPCServer *grpcapp.App
 	HTTPServer *httpapp.App
-	PG         *postgres.Postgres
-	RDB        *redis.Redis
+	Pg         *postgres.Postgres
+	Rdb        *redis.Redis
 }
 
 func New(ctx context.Context, cfg *config.Config) *App {
@@ -36,39 +33,27 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	// Redis connection
 	rdb, err := redis.New(ctx, redis.Config{
-		Addr:     cfg.RedisAddr,
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisDB,
+		Addr:     cfg.DB.RedisAddr,
+		Password: cfg.DB.RedisPassword,
+		DB:       cfg.DB.RedisDB,
 	})
-	if err != nil {
-		logger.Log().Fatal(ctx, "error with connection to redis: %s", err.Error())
-	}
 
 	// Auth config
-	authConfig := auth.NewConfig(cfg.JWTSecret, cfg.AccessTokenTTL, cfg.RefreshTokenTTL)
+	authConfig := model.AuthConfig{
+		Secret:          cfg.JWTSecret,
+		AccessTokenTTL:  cfg.AccessTokenTTL,
+		RefreshTokenTTL: cfg.RefreshTokenTTL,
+	}
 
 	// Store
-	userStore := userstore.New(pg)
-	refreshTokenStore := refreshtoken.New(rdb)
-	verificationCodeStore := verificationcode.New(rdb)
+	userStore := userstore.NewUserStore(pg)
+	refreshTokenStore := userstore.NewRefreshTokenStore(rdb)
 
 	// Service
-	authService := auth.New(userStore, refreshTokenStore, authConfig, verificationCodeStore)
-	userService := user.New(userStore, verificationCodeStore)
-
-	verificationService := verification.New(verificationCodeStore, userStore)
-	verificationService.RegisterEmailService(cfg.SMPT.Host, cfg.SMPT.Port, cfg.SMPT.Username, cfg.SMPT.Password, cfg.SMPT.Sender)
-	verificationService.RegisterSMSService(cfg.SMS.Sender)
+	userService := userservice.New(userStore, userStore, refreshTokenStore, refreshTokenStore, authConfig)
 
 	// gRPC server
-	gRPCApp := grpcapp.New(
-		ctx,
-		cfg,
-		authService,
-		userService,
-		authConfig,
-		verificationService,
-	)
+	gRPCApp := grpcapp.New(ctx, cfg, userService)
 
 	// HTTP server
 	httpServer := httpapp.New(ctx, cfg)
@@ -76,7 +61,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	return &App{
 		GRPCServer: gRPCApp,
 		HTTPServer: httpServer,
-		PG:         pg,
-		RDB:        rdb,
+		Pg:         pg,
+		Rdb:        rdb,
 	}
 }

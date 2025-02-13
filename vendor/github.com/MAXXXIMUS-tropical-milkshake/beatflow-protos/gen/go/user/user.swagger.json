@@ -1,18 +1,13 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "My API",
-    "version": "0.1"
+    "title": "user/user.proto",
+    "version": "version not set"
   },
   "tags": [
     {
       "name": "UserService"
     }
-  ],
-  "host": "localhost:8080",
-  "basePath": "/",
-  "schemes": [
-    "http"
   ],
   "consumes": [
     "application/json"
@@ -21,14 +16,14 @@
     "application/json"
   ],
   "paths": {
-    "/v1/user": {
-      "delete": {
-        "operationId": "UserService_DeleteUser",
+    "/v1/auth/login": {
+      "post": {
+        "operationId": "UserService_Login",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/userDeleteUserResponse"
+              "$ref": "#/definitions/userLoginResponse"
             }
           },
           "default": {
@@ -38,15 +33,54 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/userLoginRequest"
+            }
+          }
+        ],
         "tags": [
           "UserService"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
         ]
-      },
+      }
+    },
+    "/v1/auth/token": {
+      "post": {
+        "operationId": "UserService_RefreshToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/userRefreshTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/userRefreshTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
+    "/v1/user": {
       "patch": {
         "operationId": "UserService_UpdateUser",
         "responses": {
@@ -75,22 +109,17 @@
         ],
         "tags": [
           "UserService"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
         ]
       }
     },
-    "/v1/user/{userId}": {
+    "/v1/users": {
       "get": {
-        "operationId": "UserService_GetUser",
+        "operationId": "UserService_GetUsers",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/userGetUserResponse"
+              "$ref": "#/definitions/userGetUsersResponse"
             }
           },
           "default": {
@@ -103,8 +132,62 @@
         "parameters": [
           {
             "name": "userId",
-            "in": "path",
-            "required": true,
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pseudonym",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "orderBy.order",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "ASC",
+              "DESC"
+            ],
+            "default": "ASC"
+          },
+          {
+            "name": "orderBy.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
             "type": "string",
             "format": "int64"
           }
@@ -144,20 +227,16 @@
         }
       }
     },
-    "userDeleteUserResponse": {
-      "type": "object"
-    },
     "userGetUserResponse": {
       "type": "object",
       "properties": {
         "userId": {
-          "type": "string",
-          "format": "int64"
+          "type": "string"
         },
         "username": {
           "type": "string"
         },
-        "email": {
+        "pseudonym": {
           "type": "string"
         },
         "firstName": {
@@ -165,98 +244,116 @@
         },
         "lastName": {
           "type": "string"
-        },
-        "middleName": {
-          "type": "string"
-        },
-        "telephone": {
-          "type": "string"
-        },
-        "pseudonym": {
-          "type": "string"
-        },
-        "isDeleted": {
-          "type": "boolean"
         },
         "createdAt": {
           "type": "string",
           "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },
-    "userUpdateEmail": {
+    "userGetUsersResponse": {
       "type": "object",
       "properties": {
-        "email": {
-          "type": "string"
+        "pagination": {
+          "$ref": "#/definitions/userPagination"
         },
-        "code": {
-          "type": "string"
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/userUser"
+          }
         }
       }
     },
-    "userUpdatePassword": {
+    "userLoginRequest": {
       "type": "object",
       "properties": {
-        "oldPassword": {
-          "type": "string"
-        },
-        "newPassword": {
-          "type": "string"
-        }
-      }
-    },
-    "userUpdateTelephone": {
-      "type": "object",
-      "properties": {
-        "telephone": {
-          "type": "string"
-        },
-        "code": {
-          "type": "string"
-        }
-      }
-    },
-    "userUpdateUser": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "email": {
-          "$ref": "#/definitions/userUpdateEmail"
-        },
-        "firstName": {
-          "type": "string"
-        },
-        "lastName": {
-          "type": "string"
-        },
-        "middleName": {
-          "type": "string"
-        },
-        "telephone": {
-          "$ref": "#/definitions/userUpdateTelephone"
-        },
         "pseudonym": {
           "type": "string"
+        }
+      }
+    },
+    "userLoginResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
         },
-        "password": {
-          "$ref": "#/definitions/userUpdatePassword"
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "userOrder": {
+      "type": "string",
+      "enum": [
+        "ASC",
+        "DESC"
+      ],
+      "default": "ASC"
+    },
+    "userOrderBy": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/userOrder"
+        },
+        "field": {
+          "type": "string"
+        }
+      }
+    },
+    "userPagination": {
+      "type": "object",
+      "properties": {
+        "pages": {
+          "type": "string",
+          "format": "int64"
+        },
+        "curPage": {
+          "type": "string",
+          "format": "int64"
+        },
+        "records": {
+          "type": "string",
+          "format": "int64"
+        },
+        "recordsPerPage": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "userRefreshTokenRequest": {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "userRefreshTokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
         }
       }
     },
     "userUpdateUserRequest": {
       "type": "object",
       "properties": {
-        "user": {
-          "$ref": "#/definitions/userUpdateUser"
+        "pseudonym": {
+          "type": "string"
         },
-        "updateMask": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
           "type": "string"
         }
       }
@@ -265,13 +362,12 @@
       "type": "object",
       "properties": {
         "userId": {
-          "type": "string",
-          "format": "int64"
+          "type": "string"
         },
         "username": {
           "type": "string"
         },
-        "email": {
+        "pseudonym": {
           "type": "string"
         },
         "firstName": {
@@ -280,32 +376,35 @@
         "lastName": {
           "type": "string"
         },
-        "middleName": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "userUser": {
+      "type": "object",
+      "properties": {
+        "userId": {
           "type": "string"
         },
-        "telephone": {
+        "username": {
           "type": "string"
         },
         "pseudonym": {
           "type": "string"
         },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
+        "firstName": {
+          "type": "string"
         },
-        "updatedAt": {
+        "lastName": {
+          "type": "string"
+        },
+        "createdAt": {
           "type": "string",
           "format": "date-time"
         }
       }
-    }
-  },
-  "securityDefinitions": {
-    "bearer": {
-      "type": "apiKey",
-      "description": "Authentication token, prefixed by Bearer: Bearer 'token'",
-      "name": "Authorization",
-      "in": "header"
     }
   }
 }

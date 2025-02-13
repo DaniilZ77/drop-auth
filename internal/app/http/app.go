@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"net/http"
+	"net/http/pprof"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
@@ -32,7 +33,10 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		logger.Log().Fatal(ctx, "failed to dial server:", err)
 	}
 
-	gwmux := runtime.NewServeMux(runtime.SetQueryParameterParser(&CustomQueryParameterParser{}))
+	gwmux := runtime.NewServeMux()
+	mux := http.NewServeMux()
+	mux.Handle("/", gwmux)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 
 	// Register user
 	err = userv1.RegisterUserServiceHandler(ctx, gwmux, conn)
@@ -47,7 +51,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	}
 
 	// Cors
-	withCors := cors.AllowAll().Handler(gwmux)
+	withCors := cors.AllowAll().Handler(mux)
 
 	// Server
 	gwServer := &http.Server{

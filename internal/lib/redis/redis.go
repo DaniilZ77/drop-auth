@@ -23,8 +23,9 @@ type Redis struct {
 }
 
 type Config struct {
-	Addr, Password string
-	DB             int
+	Addr     string
+	Password string
+	DB       int
 }
 
 func New(ctx context.Context, config Config, opts ...Option) (*Redis, error) {
