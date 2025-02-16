@@ -11,6 +11,7 @@ import (
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -35,6 +36,9 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	gwmux := runtime.NewServeMux()
 	mux := http.NewServeMux()
 	mux.Handle("/", gwmux)
+	mux.Handle("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 
 	// Register user

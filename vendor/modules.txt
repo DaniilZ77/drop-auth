@@ -4,6 +4,9 @@ buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate
 # cel.dev/expr v0.19.1
 ## explicit; go 1.21.1
 cel.dev/expr
+# github.com/KyleBanks/depth v1.2.1
+## explicit
+github.com/KyleBanks/depth
 # github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.32
 ## explicit; go 1.23.1
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user
@@ -24,6 +27,19 @@ github.com/cespare/xxhash/v2
 # github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f
 ## explicit
 github.com/dgryski/go-rendezvous
+# github.com/go-openapi/jsonpointer v0.19.5
+## explicit; go 1.13
+github.com/go-openapi/jsonpointer
+# github.com/go-openapi/jsonreference v0.20.0
+## explicit; go 1.13
+github.com/go-openapi/jsonreference
+github.com/go-openapi/jsonreference/internal
+# github.com/go-openapi/spec v0.20.6
+## explicit; go 1.13
+github.com/go-openapi/spec
+# github.com/go-openapi/swag v0.19.15
+## explicit; go 1.11
+github.com/go-openapi/swag
 # github.com/golang-jwt/jwt v3.2.2+incompatible
 ## explicit
 github.com/golang-jwt/jwt
@@ -105,6 +121,9 @@ github.com/jackc/pgx/v5/pgxpool
 ## explicit; go 1.19
 github.com/jackc/puddle/v2
 github.com/jackc/puddle/v2/internal/genstack
+# github.com/josharian/intern v1.0.0
+## explicit; go 1.5
+github.com/josharian/intern
 # github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 ## explicit
 github.com/lann/builder
@@ -116,6 +135,11 @@ github.com/lann/ps
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
+# github.com/mailru/easyjson v0.7.6
+## explicit; go 1.12
+github.com/mailru/easyjson/buffer
+github.com/mailru/easyjson/jlexer
+github.com/mailru/easyjson/jwriter
 # github.com/mattn/go-colorable v0.1.13
 ## explicit; go 1.15
 github.com/mattn/go-colorable
@@ -144,35 +168,45 @@ github.com/rs/zerolog/internal/json
 # github.com/stoewer/go-strcase v1.3.0
 ## explicit; go 1.11
 github.com/stoewer/go-strcase
+# github.com/swaggo/files/v2 v2.0.0
+## explicit; go 1.16
+github.com/swaggo/files/v2
+# github.com/swaggo/http-swagger/v2 v2.0.2
+## explicit; go 1.17
+github.com/swaggo/http-swagger/v2
+# github.com/swaggo/swag v1.8.1
+## explicit; go 1.18
+github.com/swaggo/swag
 # github.com/telegram-mini-apps/init-data-golang v1.2.0
 ## explicit; go 1.18
 github.com/telegram-mini-apps/init-data-golang
 # go.uber.org/atomic v1.7.0
 ## explicit; go 1.13
 go.uber.org/atomic
-# golang.org/x/crypto v0.27.0
+# golang.org/x/crypto v0.33.0
 ## explicit; go 1.20
 golang.org/x/crypto/pbkdf2
 # golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/slices
-# golang.org/x/net v0.29.0
+# golang.org/x/net v0.35.0
 ## explicit; go 1.18
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
+golang.org/x/net/internal/httpcommon
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/sync v0.10.0
+# golang.org/x/sync v0.11.0
 ## explicit; go 1.18
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.25.0
+# golang.org/x/sys v0.30.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.21.0
+# golang.org/x/text v0.22.0
 ## explicit; go 1.18
 golang.org/x/text/cases
 golang.org/x/text/feature/plural
@@ -194,6 +228,13 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
+# golang.org/x/tools v0.24.0
+## explicit; go 1.19
+golang.org/x/tools/go/ast/astutil
+golang.org/x/tools/go/buildutil
+golang.org/x/tools/go/internal/cgo
+golang.org/x/tools/go/loader
+golang.org/x/tools/internal/versions
 # google.golang.org/genproto/googleapis/api v0.0.0-20240826202546-f6391c0de4c7
 ## explicit; go 1.21
 google.golang.org/genproto/googleapis/api
@@ -305,3 +346,6 @@ google.golang.org/protobuf/types/known/fieldmaskpb
 google.golang.org/protobuf/types/known/structpb
 google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/known/wrapperspb
+# gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
+gopkg.in/yaml.v2

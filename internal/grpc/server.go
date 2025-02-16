@@ -175,6 +175,8 @@ func (s *server) AddAdmin(ctx context.Context, req *userv1.AddAdminRequest) (*us
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, model.ErrAdminNotMajor) {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
+		} else if errors.Is(err, model.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -219,7 +221,7 @@ func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*
 
 	if !isLocalhost(p.Addr.String()) {
 		logger.Log().Error(ctx, "request must be from localhost")
-		return nil, status.Error(codes.InvalidArgument, "request must be from localhost")
+		return nil, status.Error(codes.PermissionDenied, "request must be from localhost")
 	}
 
 	if err := s.userModifier.InitAdmin(ctx, req.Username); err != nil {
@@ -228,6 +230,8 @@ func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, model.ErrAdminNotMajor) {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
+		} else if errors.Is(err, model.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
