@@ -29,9 +29,16 @@ func New(
 ) *App {
 	// Methods that require authentication
 	requireAuth := map[string]bool{
-		"/user.UserService/UpdateUser": true,
-		"/user.UserService/DeleteUser": true,
-		"/user.UserService/Login":      true,
+		"/user.UserService/UpdateUser":  true,
+		"/user.UserService/DeleteUser":  true,
+		"/user.UserService/Login":       true,
+		"/user.UserService/AddAdmin":    true,
+		"/user.UserService/DeleteAdmin": true,
+	}
+
+	requireAdmin := map[string]bool{
+		"/user.UserService/AddAdmin":    true,
+		"/user.UserService/DeleteAdmin": true,
 	}
 
 	var opts []grpc.ServerOption
@@ -61,7 +68,7 @@ func New(
 	opts = append(opts, grpc.ChainUnaryInterceptor(
 		recovery.UnaryServerInterceptor(recoveryOpts...),
 		logging.UnaryServerInterceptor(interceptorLogger(logger.Log()), loggingOpts...),
-		user.AuthMiddleware(secrets, requireAuth),
+		user.AuthMiddleware(secrets, requireAuth, requireAdmin),
 	))
 
 	// TLS nolint

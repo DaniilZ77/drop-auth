@@ -15,12 +15,16 @@ import (
 type UserModifier interface {
 	UpdateUser(ctx context.Context, user generated.UpdateUserParams) (*generated.User, error)
 	SaveUser(ctx context.Context, user generated.SaveUserParams) (*uuid.UUID, error)
+	SaveAdmin(ctx context.Context, params generated.SaveAdminParams) error
+	DeleteAdmin(ctx context.Context, userID uuid.UUID) error
 }
 
 type UserProvider interface {
 	GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *int, err error)
-	GetUserByExternalID(ctx context.Context, id int32) (*generated.User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*generated.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*generated.User, error)
+	GetAdminByID(ctx context.Context, id uuid.UUID) (*generated.GetAdminByIDRow, error)
+	GetUserByExternalID(ctx context.Context, id int32) (*generated.User, error)
 }
 
 type RefreshTokenProvider interface {
@@ -70,11 +74,17 @@ func (s *UserService) GetUsers(ctx context.Context, params model.GetUsersParams)
 	return s.userProvider.GetUsers(ctx, params)
 }
 
-func (s *UserService) generateToken(ctx context.Context, id uuid.UUID, expiry time.Duration) (*string, error) {
-	data := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+func (s *UserService) generateToken(ctx context.Context, id uuid.UUID, scale generated.NullAdminScale, expiry time.Duration) (*string, error) {
+	claims := jwt.MapClaims{
 		"id":  id,
 		"exp": time.Now().Add(time.Minute * expiry).Unix(),
-	})
+	}
+
+	if scale.Valid {
+		claims["admin"] = scale.AdminScale
+	}
+
+	data := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	token, err := data.SignedString([]byte(s.authConfig.Secret))
 	if err != nil {
@@ -106,7 +116,13 @@ func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserPara
 		}
 	}
 
-	accessToken, err = s.generateToken(ctx, user.ID, time.Duration(s.authConfig.AccessTokenTTL))
+	admin, err := s.userProvider.GetAdminByID(ctx, user.ID)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return nil, nil, err
+	}
+
+	accessToken, err = s.generateToken(ctx, user.ID, admin.Scale, time.Duration(s.authConfig.AccessTokenTTL))
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return nil, nil, err
@@ -129,13 +145,13 @@ func (s *UserService) RefreshToken(ctx context.Context, token string) (accessTok
 		return nil, nil, err
 	}
 
-	user, err := s.userProvider.GetUserByID(ctx, uuid.MustParse(*userID))
+	user, err := s.userProvider.GetAdminByID(ctx, uuid.MustParse(*userID))
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return nil, nil, err
 	}
 
-	accessToken, err = s.generateToken(ctx, user.ID, time.Duration(s.authConfig.AccessTokenTTL))
+	accessToken, err = s.generateToken(ctx, user.ID, user.Scale, time.Duration(s.authConfig.AccessTokenTTL))
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		return nil, nil, err
@@ -153,4 +169,61 @@ func (s *UserService) RefreshToken(ctx context.Context, token string) (accessTok
 
 func (s *UserService) GetUser(ctx context.Context, id string) (*generated.User, error) {
 	return s.userProvider.GetUserByID(ctx, uuid.MustParse(id))
+}
+
+func (s *UserService) AddAdmin(ctx context.Context, username string, scale generated.AdminScale) error {
+	if scale != generated.AdminScaleMajor {
+		logger.Log().Debug(ctx, model.ErrAdminNotMajor.Error())
+		return model.ErrAdminNotMajor
+	}
+
+	user, err := s.userProvider.GetUserByUsername(ctx, username)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return err
+	}
+
+	return s.userModifier.SaveAdmin(ctx, generated.SaveAdminParams{
+		UserID: user.ID,
+		Scale:  generated.AdminScaleMinor,
+	})
+}
+
+func (s *UserService) DeleteAdmin(ctx context.Context, username string, scale generated.AdminScale) error {
+	if scale != generated.AdminScaleMajor {
+		logger.Log().Debug(ctx, model.ErrAdminNotMajor.Error())
+		return model.ErrAdminNotMajor
+	}
+
+	user, err := s.userProvider.GetUserByUsername(ctx, username)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return err
+	}
+
+	admin, err := s.userProvider.GetAdminByID(ctx, user.ID)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return err
+	}
+
+	if admin.Scale.Valid && admin.Scale.AdminScale == generated.AdminScaleMinor {
+		logger.Log().Debug(ctx, model.ErrCannotDeleteMajorAdmin.Error())
+		return model.ErrCannotDeleteMajorAdmin
+	}
+
+	return s.userModifier.DeleteAdmin(ctx, user.ID)
+}
+
+func (s *UserService) InitAdmin(ctx context.Context, username string) error {
+	user, err := s.userProvider.GetUserByUsername(ctx, username)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return err
+	}
+
+	return s.userModifier.SaveAdmin(ctx, generated.SaveAdminParams{
+		UserID: user.ID,
+		Scale:  generated.AdminScaleMajor,
+	})
 }

@@ -10,9 +10,10 @@ require (
 require github.com/golang-jwt/jwt v3.2.2+incompatible
 
 require (
-	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.20
+	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.31
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/bufbuild/protovalidate-go v0.9.2
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
@@ -27,7 +28,6 @@ require (
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/google/cel-go v0.23.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

@@ -13,6 +13,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type UserStore struct {
@@ -105,8 +106,8 @@ func (s *UserStore) SaveUser(ctx context.Context, user generated.SaveUserParams)
 	return &id, nil
 }
 
-func (s *UserStore) GetUserByExternalID(ctx context.Context, id int32) (*generated.User, error) {
-	user, err := s.Queries.GetUserByExternalID(ctx, id)
+func (s *UserStore) GetUserByID(ctx context.Context, id uuid.UUID) (*generated.User, error) {
+	user, err := s.Queries.GetUserByID(ctx, id)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
@@ -118,8 +119,56 @@ func (s *UserStore) GetUserByExternalID(ctx context.Context, id int32) (*generat
 	return &user, nil
 }
 
-func (s *UserStore) GetUserByID(ctx context.Context, id uuid.UUID) (*generated.User, error) {
-	user, err := s.Queries.GetUserByID(ctx, id)
+func (s *UserStore) GetUserByUsername(ctx context.Context, username string) (*generated.User, error) {
+	user, err := s.Queries.GetUserByUsername(ctx, username)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, model.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (s *UserStore) SaveAdmin(ctx context.Context, params generated.SaveAdminParams) error {
+	if err := s.Queries.SaveAdmin(ctx, params); err != nil {
+		logger.Log().Error(ctx, err.Error())
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return model.ErrAdminAlreadyExists
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserStore) DeleteAdmin(ctx context.Context, userID uuid.UUID) error {
+	if err := s.Queries.DeleteAdmin(ctx, userID); err != nil {
+		logger.Log().Error(ctx, err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserStore) GetAdminByID(ctx context.Context, id uuid.UUID) (*generated.GetAdminByIDRow, error) {
+	admin, err := s.Queries.GetAdminByID(ctx, id)
+	if err != nil {
+		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, model.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return &admin, nil
+}
+
+func (s *UserStore) GetUserByExternalID(ctx context.Context, id int32) (*generated.User, error) {
+	user, err := s.Queries.GetUserByExternalID(ctx, id)
 	if err != nil {
 		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, sql.ErrNoRows) {

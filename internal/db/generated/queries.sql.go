@@ -11,6 +11,35 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteAdmin = `-- name: DeleteAdmin :exec
+delete from "users_admins" where user_id = $1
+`
+
+func (q *Queries) DeleteAdmin(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAdmin, userID)
+	return err
+}
+
+const getAdminByID = `-- name: GetAdminByID :one
+select u.id, ua.scale
+from "users" u
+left join "users_admins" ua on u.id = ua.user_id
+where u.id = $1
+and "is_deleted" = false
+`
+
+type GetAdminByIDRow struct {
+	ID    uuid.UUID
+	Scale NullAdminScale
+}
+
+func (q *Queries) GetAdminByID(ctx context.Context, id uuid.UUID) (GetAdminByIDRow, error) {
+	row := q.db.QueryRow(ctx, getAdminByID, id)
+	var i GetAdminByIDRow
+	err := row.Scan(&i.ID, &i.Scale)
+	return i, err
+}
+
 const getUserByExternalID = `-- name: GetUserByExternalID :one
 select id, external_id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
 where external_id = $1
@@ -55,6 +84,43 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+select id, external_id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
+where username = $1
+and "is_deleted" = false
+`
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.ExternalID,
+		&i.Username,
+		&i.Pseudonym,
+		&i.FirstName,
+		&i.LastName,
+		&i.IsDeleted,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const saveAdmin = `-- name: SaveAdmin :exec
+insert into "users_admins" ("user_id", "scale") values ($1, $2)
+`
+
+type SaveAdminParams struct {
+	UserID uuid.UUID
+	Scale  AdminScale
+}
+
+func (q *Queries) SaveAdmin(ctx context.Context, arg SaveAdminParams) error {
+	_, err := q.db.Exec(ctx, saveAdmin, arg.UserID, arg.Scale)
+	return err
 }
 
 const saveUser = `-- name: SaveUser :one

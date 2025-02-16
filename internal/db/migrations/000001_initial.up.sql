@@ -19,3 +19,12 @@ create index on "users" ("username");
 create index on "users" ("first_name");
 create index on "users" ("last_name");
 create index on "users" ("external_id");
+
+create type "admin_scale" as enum ('minor', 'major');
+
+create table "users_admins" (
+  "user_id" uuid primary key,
+  "scale" admin_scale not null
+);
+
+alter table "users_admins" add foreign key ("user_id") references "users" ("id");

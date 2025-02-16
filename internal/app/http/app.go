@@ -8,7 +8,6 @@ import (
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
-	authv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/auth"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
@@ -40,12 +39,6 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	// Register user
 	err = userv1.RegisterUserServiceHandler(ctx, gwmux, conn)
-	if err != nil {
-		logger.Log().Fatal(ctx, "failed to register gateway: %v", err)
-	}
-
-	// Register auth
-	err = authv1.RegisterAuthServiceHandler(ctx, gwmux, conn)
 	if err != nil {
 		logger.Log().Fatal(ctx, "failed to register gateway: %v", err)
 	}
