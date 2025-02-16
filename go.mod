@@ -10,7 +10,7 @@ require (
 require github.com/golang-jwt/jwt v3.2.2+incompatible
 
 require (
-	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.31
+	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.32
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/bufbuild/protovalidate-go v0.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.1

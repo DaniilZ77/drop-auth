@@ -234,3 +234,9 @@ func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*
 
 	return &userv1.InitAdminResponse{}, nil
 }
+
+func (s *server) Health(context.Context, *userv1.HealthRequest) (*userv1.HealthResponse, error) {
+	return &userv1.HealthResponse{
+		Message: "OK",
+	}, nil
+}

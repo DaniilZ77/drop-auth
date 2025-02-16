@@ -4,7 +4,7 @@ buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate
 # cel.dev/expr v0.19.1
 ## explicit; go 1.21.1
 cel.dev/expr
-# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.31
+# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.32
 ## explicit; go 1.23.1
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user
 # github.com/Masterminds/squirrel v1.5.4

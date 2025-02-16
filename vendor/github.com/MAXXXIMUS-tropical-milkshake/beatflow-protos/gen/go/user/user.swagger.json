@@ -16,6 +16,28 @@
     "application/json"
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "operationId": "UserService_Health",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/userHealthResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
     "/v1/admin": {
       "delete": {
         "operationId": "UserService_DeleteAdmin",
@@ -369,6 +391,14 @@
             "type": "object",
             "$ref": "#/definitions/userUser"
           }
+        }
+      }
+    },
+    "userHealthResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
         }
       }
     },
