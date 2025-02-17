@@ -58,13 +58,13 @@ func (s *UserStore) GetUsers(ctx context.Context, params model.GetUsersParams) (
 	}
 
 	count := builder.Select("count(*)").FromSelect(query, "u")
-	sql, args, err := count.ToSql()
+	stmt, args, err := count.ToSql()
 	if err != nil {
 		s.log.Error("failed to convert to sql", sl.Err(err))
 		return nil, nil, err
 	}
 
-	err = s.DB.QueryRow(ctx, sql, args...).Scan(&total)
+	err = s.DB.QueryRow(ctx, stmt, args...).Scan(&total)
 	if err != nil {
 		s.log.Error("failed to count users", sl.Err(err))
 		return nil, nil, err
@@ -74,15 +74,15 @@ func (s *UserStore) GetUsers(ctx context.Context, params model.GetUsersParams) (
 		query = query.OrderBy(fmt.Sprintf("%q %s", params.OrderBy.Field, params.OrderBy.Order))
 	}
 
-	query = query.Limit(uint64(params.Limit)).Offset(uint64(params.Offset))
+	query = query.Limit(uint64(params.Limit)).Offset(uint64(params.Offset)) // nolint
 
-	sql, args, err = query.ToSql()
+	stmt, args, err = query.ToSql()
 	if err != nil {
 		s.log.Error("failed to convert to sql", sl.Err(err))
 		return nil, nil, err
 	}
 
-	rows, err := s.DB.Query(ctx, sql, args...)
+	rows, err := s.DB.Query(ctx, stmt, args...)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -165,16 +165,4 @@ func (s *UserStore) GetAdminByID(ctx context.Context, id uuid.UUID) (*generated.
 	}
 
 	return &admin, nil
-}
-
-func (s *UserStore) GetUserByExternalID(ctx context.Context, id int32) (*generated.User, error) {
-	user, err := s.Queries.GetUserByExternalID(ctx, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, model.ErrUserNotFound
-		}
-		return nil, err
-	}
-
-	return &user, nil
 }

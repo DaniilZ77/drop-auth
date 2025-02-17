@@ -40,31 +40,8 @@ func (q *Queries) GetAdminByID(ctx context.Context, id uuid.UUID) (GetAdminByIDR
 	return i, err
 }
 
-const getUserByExternalID = `-- name: GetUserByExternalID :one
-select id, external_id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
-where external_id = $1
-and "is_deleted" = false
-`
-
-func (q *Queries) GetUserByExternalID(ctx context.Context, externalID int32) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByExternalID, externalID)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.ExternalID,
-		&i.Username,
-		&i.Pseudonym,
-		&i.FirstName,
-		&i.LastName,
-		&i.IsDeleted,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getUserByID = `-- name: GetUserByID :one
-select id, external_id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
+select id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
 where id = $1
 and "is_deleted" = false
 `
@@ -74,7 +51,6 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.ExternalID,
 		&i.Username,
 		&i.Pseudonym,
 		&i.FirstName,
@@ -87,7 +63,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-select id, external_id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
+select id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
 where username = $1
 and "is_deleted" = false
 `
@@ -97,7 +73,6 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.ExternalID,
 		&i.Username,
 		&i.Pseudonym,
 		&i.FirstName,
@@ -124,23 +99,21 @@ func (q *Queries) SaveAdmin(ctx context.Context, arg SaveAdminParams) error {
 }
 
 const saveUser = `-- name: SaveUser :one
-insert into "users" ("username", "external_id", "pseudonym", "first_name", "last_name")
-values ($1, $2, $3, $4, $5)
+insert into "users" ("username", "pseudonym", "first_name", "last_name")
+values ($1, $2, $3, $4)
 returning "id"
 `
 
 type SaveUserParams struct {
-	Username   string
-	ExternalID int32
-	Pseudonym  string
-	FirstName  string
-	LastName   string
+	Username  string
+	Pseudonym string
+	FirstName string
+	LastName  string
 }
 
 func (q *Queries) SaveUser(ctx context.Context, arg SaveUserParams) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, saveUser,
 		arg.Username,
-		arg.ExternalID,
 		arg.Pseudonym,
 		arg.FirstName,
 		arg.LastName,
@@ -157,7 +130,7 @@ set "pseudonym" = coalesce($1, "pseudonym"),
 "last_name" = coalesce($3, "last_name")
 where id = $4
 and "is_deleted" = false
-returning id, external_id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at
+returning id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at
 `
 
 type UpdateUserParams struct {
@@ -177,7 +150,6 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.ExternalID,
 		&i.Username,
 		&i.Pseudonym,
 		&i.FirstName,

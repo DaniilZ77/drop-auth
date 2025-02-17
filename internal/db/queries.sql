@@ -1,6 +1,6 @@
 -- name: SaveUser :one
-insert into "users" ("username", "external_id", "pseudonym", "first_name", "last_name")
-values ($1, $2, $3, $4, $5)
+insert into "users" ("username", "pseudonym", "first_name", "last_name")
+values ($1, $2, $3, $4)
 returning "id";
 
 -- name: UpdateUser :one
@@ -11,11 +11,6 @@ set "pseudonym" = coalesce(sqlc.narg('pseudonym'), "pseudonym"),
 where id = sqlc.arg('id')
 and "is_deleted" = false
 returning *;
-
--- name: GetUserByExternalID :one
-select * from "users"
-where external_id = $1
-and "is_deleted" = false;
 
 -- name: GetUserByID :one
 select * from "users"

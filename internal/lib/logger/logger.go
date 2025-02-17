@@ -25,7 +25,11 @@ func New(env string) *slog.Logger {
 	opts := &slog.HandlerOptions{
 		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.LevelKey {
-				level := a.Value.Any().(slog.Level)
+				level, ok := a.Value.Any().(slog.Level)
+				if !ok {
+					return a
+				}
+
 				levelLabel, ok := levelNames[level]
 				if !ok {
 					levelLabel = level.String()

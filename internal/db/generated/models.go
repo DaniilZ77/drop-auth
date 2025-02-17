@@ -55,15 +55,14 @@ func (ns NullAdminScale) Value() (driver.Value, error) {
 }
 
 type User struct {
-	ID         uuid.UUID
-	ExternalID int32
-	Username   string
-	Pseudonym  string
-	FirstName  string
-	LastName   string
-	IsDeleted  bool
-	CreatedAt  pgtype.Timestamp
-	UpdatedAt  pgtype.Timestamp
+	ID        uuid.UUID
+	Username  string
+	Pseudonym string
+	FirstName string
+	LastName  string
+	IsDeleted bool
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }
 
 type UsersAdmin struct {

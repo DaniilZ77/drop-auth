@@ -24,7 +24,7 @@ const (
 	adminContextKey    = contextKey("admin")
 )
 
-func AuthMiddleware(secrets map[string]string, requireAuth map[string]bool, requireAdmin map[string]bool) grpc.UnaryServerInterceptor {
+func AuthMiddleware(secrets map[string]string, requireAuth, requireAdmin map[string]bool) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		if !requireAuth[info.FullMethod] {
 			return handler(ctx, req)
@@ -42,7 +42,7 @@ func AuthMiddleware(secrets map[string]string, requireAuth map[string]bool, requ
 
 		switch token := strings.TrimSpace(data[1]); strings.ToLower(data[0]) {
 		case "bearer":
-			id, admin, err := validateToken(ctx, token, secrets["bearer"])
+			id, admin, err := validateToken(token, secrets["bearer"])
 			if err != nil {
 				return nil, status.Errorf(codes.Unauthenticated, "%s: %s", model.ErrUnauthorized.Error(), err.Error())
 			}
@@ -72,7 +72,7 @@ func AuthMiddleware(secrets map[string]string, requireAuth map[string]bool, requ
 	}
 }
 
-func validateToken(ctx context.Context, token, secret string) (*string, *string, error) {
+func validateToken(token, secret string) (id, admin *string, err error) {
 	data, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("%w: %s", model.ErrUnauthorized, "unexpected signing method")
@@ -122,7 +122,6 @@ func getInitDataFromContext(ctx context.Context) (*generated.SaveUserParams, err
 	}
 
 	var user generated.SaveUserParams
-	user.ExternalID = int32(initData.User.ID)
 	user.Username = initData.User.Username
 	user.FirstName = initData.User.FirstName
 	user.LastName = initData.User.LastName

@@ -25,7 +25,6 @@ type UserProvider interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (*generated.User, error)
 	GetUserByUsername(ctx context.Context, username string) (*generated.User, error)
 	GetAdminByID(ctx context.Context, id uuid.UUID) (*generated.GetAdminByIDRow, error)
-	GetUserByExternalID(ctx context.Context, id int32) (*generated.User, error)
 }
 
 type RefreshTokenProvider interface {
@@ -98,8 +97,8 @@ func (s *UserService) generateToken(id uuid.UUID, scale generated.NullAdminScale
 	return &token, nil
 }
 
-func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserParams) (accessToken *string, refreshToken *string, err error) {
-	user, err := s.userProvider.GetUserByExternalID(ctx, saveUser.ExternalID)
+func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserParams) (accessToken, refreshToken *string, err error) {
+	user, err := s.userProvider.GetUserByUsername(ctx, saveUser.Username)
 	if err != nil && !errors.Is(err, model.ErrUserNotFound) {
 		s.log.Error("failed to get user", sl.Err(err))
 		return nil, nil, err
@@ -112,7 +111,7 @@ func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserPara
 			return nil, nil, err
 		}
 
-		user, err = s.userProvider.GetUserByExternalID(ctx, saveUser.ExternalID)
+		user, err = s.userProvider.GetUserByUsername(ctx, saveUser.Username)
 		if err != nil {
 			s.log.Error("failed to get user", sl.Err(err))
 			return nil, nil, err
@@ -141,7 +140,7 @@ func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserPara
 	return accessToken, refreshToken, nil
 }
 
-func (s *UserService) RefreshToken(ctx context.Context, token string) (accessToken *string, refreshToken *string, err error) {
+func (s *UserService) RefreshToken(ctx context.Context, token string) (accessToken, refreshToken *string, err error) {
 	userID, err := s.refreshTokenProvider.GetRefreshToken(ctx, token)
 	if err != nil {
 		s.log.Error("failed to get refresh token", sl.Err(err))

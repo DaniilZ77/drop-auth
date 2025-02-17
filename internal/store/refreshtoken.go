@@ -28,7 +28,7 @@ func (s *RefreshTokenStore) GetRefreshToken(ctx context.Context, tokenID string)
 	return &userID, nil
 }
 
-func (s *RefreshTokenStore) SetRefreshToken(ctx context.Context, userID string, tokenID string, expiry time.Duration) error {
+func (s *RefreshTokenStore) SetRefreshToken(ctx context.Context, userID, tokenID string, expiry time.Duration) error {
 	if err := s.Redis.Set(ctx, tokenID, userID, expiry).Err(); err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (s *RefreshTokenStore) SetRefreshToken(ctx context.Context, userID string, 
 	return nil
 }
 
-func (s *RefreshTokenStore) ReplaceRefreshToken(ctx context.Context, oldID string, newID string, userID string, expiry time.Duration) error {
+func (s *RefreshTokenStore) ReplaceRefreshToken(ctx context.Context, oldID, newID, userID string, expiry time.Duration) error {
 	_, err := s.Redis.TxPipelined(ctx, func(pipe rdb.Pipeliner) error {
 		pipe.Del(ctx, oldID)
 		pipe.Set(ctx, newID, userID, expiry)
