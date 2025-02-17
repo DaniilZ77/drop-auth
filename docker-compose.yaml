@@ -3,7 +3,7 @@ services:
     container_name: drop-auth
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "-k", "https://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 1m
       retries: 2
@@ -27,7 +27,7 @@ services:
       sh -c "./bin/migrator -db_url postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB} -migrations_path ${MIGRATIONS_PATH} &&
       ./bin/drop-auth -db_url postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB} -grpc_port ${GRPC_PORT} -http_port ${HTTP_PORT}
       -redis_password ${REDIS_PASSWORD} -redis_addr ${REDIS_ADDRESS} -cert ${CERT} -key ${KEY} -jwt_secret ${JWT_SECRET} -access_token_ttl ${ACCESS_TOKEN_TTL}
-      -refresh_token_ttl ${REFRESH_TOKEN_TTL} -read_timeout ${READ_TIMEOUT} -log_level ${LOG_LEVEL} -tma_secret ${TMA_SECRET}"
+      -refresh_token_ttl ${REFRESH_TOKEN_TTL} -read_timeout ${READ_TIMEOUT} -env ${ENV} -tma_secret ${TMA_SECRET}"
 
   postgres:
     image: postgres:16.4-alpine

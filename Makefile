@@ -12,7 +12,7 @@ run: ### run app
 	go run cmd/auth/main.go -db_url '$(PG_URL)' \
 	-grpc_port localhost:50051 -tma_secret 5768337691:AAH5YkoiEuPk8-FZa32hStHTqXiLPtAEhx8 \
 	-access_token_ttl 15 -refresh_token_ttl 14400 -read_timeout 5 \
-	-http_port localhost:8080 -log_level debug -cert ./tls/cert.pem \
+	-http_port localhost:8080 -env local -cert ./tls/cert.pem \
 	-key ./tls/key.pem -jwt_secret secret -redis_addr localhost:6379
 
 build: ### build app

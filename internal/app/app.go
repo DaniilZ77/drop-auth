@@ -2,11 +2,12 @@ package app
 
 import (
 	"context"
+	"os"
 
 	grpcapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/grpc"
 	httpapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/http"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
@@ -22,13 +23,13 @@ type App struct {
 }
 
 func New(ctx context.Context, cfg *config.Config) *App {
-	// Init logger
-	logger.New(cfg.Log.Level)
+	log := sl.New(cfg.Env)
 
 	// Postgres connection
-	pg, err := postgres.New(ctx, cfg.DB.URL)
+	pg, err := postgres.New(ctx, cfg.DB.URL, log)
 	if err != nil {
-		logger.Log().Fatal(ctx, "error with connection to database: %s", err.Error())
+		log.Log(ctx, sl.LevelFatal, "error with connection to database", sl.Err(err))
+		os.Exit(1)
 	}
 
 	// Redis connection
@@ -36,7 +37,11 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		Addr:     cfg.DB.RedisAddr,
 		Password: cfg.DB.RedisPassword,
 		DB:       cfg.DB.RedisDB,
-	})
+	}, log)
+	if err != nil {
+		log.Log(ctx, sl.LevelFatal, "error with connection to redis", sl.Err(err))
+		os.Exit(1)
+	}
 
 	// Auth config
 	authConfig := model.AuthConfig{
@@ -46,17 +51,24 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	}
 
 	// Store
-	userStore := userstore.NewUserStore(pg)
+	userStore := userstore.NewUserStore(pg, log)
 	refreshTokenStore := userstore.NewRefreshTokenStore(rdb)
 
 	// Service
-	userService := userservice.New(userStore, userStore, refreshTokenStore, refreshTokenStore, authConfig)
+	userService := userservice.New(
+		userStore,
+		userStore,
+		refreshTokenStore,
+		refreshTokenStore,
+		authConfig,
+		log,
+	)
 
 	// gRPC server
-	gRPCApp := grpcapp.New(ctx, cfg, userService)
+	gRPCApp := grpcapp.New(ctx, cfg, userService, log)
 
 	// HTTP server
-	httpServer := httpapp.New(ctx, cfg)
+	httpServer := httpapp.New(ctx, cfg, log)
 
 	return &App{
 		GRPCServer: gRPCApp,

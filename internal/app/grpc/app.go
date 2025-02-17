@@ -2,12 +2,13 @@ package gprc
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"net"
+	"os"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
 	user "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/grpc"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	userservice "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -20,12 +21,14 @@ import (
 type App struct {
 	gRPCServer *grpc.Server
 	port       string
+	log        *slog.Logger
 }
 
 func New(
 	ctx context.Context,
 	cfg *config.Config,
 	userService *userservice.UserService,
+	log *slog.Logger,
 ) *App {
 	// Methods that require authentication
 	requireAuth := map[string]bool{
@@ -54,7 +57,7 @@ func New(
 	// Recovery
 	recoveryOpts := []recovery.Option{
 		recovery.WithRecoveryHandler(func(p any) (err error) {
-			logger.Log().Error(ctx, fmt.Sprintf("recovered from panic: %q", p))
+			log.Error("recovered from panic", slog.Any("error", p))
 
 			return status.Errorf(codes.Internal, "internal error")
 		}),
@@ -67,7 +70,7 @@ func New(
 
 	opts = append(opts, grpc.ChainUnaryInterceptor(
 		recovery.UnaryServerInterceptor(recoveryOpts...),
-		logging.UnaryServerInterceptor(interceptorLogger(logger.Log()), loggingOpts...),
+		logging.UnaryServerInterceptor(interceptorLogger(log), loggingOpts...),
 		user.AuthMiddleware(secrets, requireAuth, requireAdmin),
 	))
 
@@ -83,34 +86,37 @@ func New(
 	gRPCServer := grpc.NewServer(opts...)
 
 	// Register services
-	user.Register(gRPCServer, userService, userService, userService)
+	user.Register(gRPCServer, userService, userService, userService, log)
 
 	return &App{
 		gRPCServer: gRPCServer,
 		port:       cfg.GRPCPort,
+		log:        log,
 	}
 }
 
-func interceptorLogger(l logger.Logger) logging.Logger {
+func interceptorLogger(l *slog.Logger) logging.Logger {
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
 		switch lvl {
 		case logging.LevelDebug:
-			l.Debug(ctx, msg, fields...)
+			l.DebugContext(ctx, msg, fields...)
 		case logging.LevelInfo:
-			l.Info(ctx, msg, fields...)
+			l.InfoContext(ctx, msg, fields...)
 		case logging.LevelWarn:
-			l.Warn(ctx, msg, fields...)
+			l.WarnContext(ctx, msg, fields...)
 		case logging.LevelError:
-			l.Error(ctx, msg, fields...)
+			l.ErrorContext(ctx, msg, fields...)
 		default:
-			logger.Log().Fatal(ctx, fmt.Sprintf("unknown level %v", lvl))
+			l.Log(ctx, sl.LevelFatal, "unknown level", slog.Any("level", lvl))
+			os.Exit(1)
 		}
 	})
 }
 
 func (a *App) MustRun(ctx context.Context) {
 	if err := a.Run(ctx); err != nil {
-		logger.Log().Fatal(ctx, "failed to run grpc server: %v", err)
+		a.log.Log(ctx, sl.LevelFatal, "failed to run grpc server", sl.Err(err))
+		os.Exit(1)
 	}
 }
 
@@ -120,7 +126,7 @@ func (a *App) Run(ctx context.Context) error {
 		return err
 	}
 
-	logger.Log().Info(ctx, fmt.Sprintf("grpc server started on port %s", a.port))
+	a.log.Info("grpc server started", slog.String("port", a.port))
 
 	if err := a.gRPCServer.Serve(l); err != nil {
 		return err
@@ -130,7 +136,7 @@ func (a *App) Run(ctx context.Context) error {
 }
 
 func (a *App) Stop(ctx context.Context) {
-	logger.Log().Info(ctx, "stopping grpc server")
+	a.log.Info("stopping grpc server")
 
 	a.gRPCServer.GracefulStop()
 }

@@ -3,9 +3,10 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/bufbuild/protovalidate-go"
@@ -39,6 +40,7 @@ type server struct {
 	userModifier UserModifier
 	userProvider UserProvider
 	authProvider AuthProvider
+	log          *slog.Logger
 }
 
 func Register(
@@ -46,26 +48,25 @@ func Register(
 	userModifier UserModifier,
 	userProvider UserProvider,
 	authProvider AuthProvider,
+	log *slog.Logger,
 ) {
-	userv1.RegisterUserServiceServer(gRPCServer, &server{userModifier: userModifier, userProvider: userProvider, authProvider: authProvider})
+	userv1.RegisterUserServiceServer(gRPCServer, &server{userModifier: userModifier, userProvider: userProvider, authProvider: authProvider, log: log})
 }
 
 func (s *server) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) (*userv1.UpdateUserResponse, error) {
 	if err := protovalidate.Validate(req); err != nil {
-		logger.Log().Debug(ctx, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	id, err := getUserIDFromContext(ctx)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	updateUser := model.ToModelUpdateUserParams(uuid.MustParse(*id), req)
 	user, err := s.userModifier.UpdateUser(ctx, *updateUser)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -74,14 +75,16 @@ func (s *server) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) 
 
 func (s *server) GetUsers(ctx context.Context, req *userv1.GetUsersRequest) (*userv1.GetUsersResponse, error) {
 	if err := protovalidate.Validate(req); err != nil {
-		logger.Log().Debug(ctx, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	params := model.ToModelGetUsersParams(req)
 	users, total, err := s.userProvider.GetUsers(ctx, *params)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		if errors.Is(err, model.ErrOrderByInvalidField) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -91,10 +94,10 @@ func (s *server) GetUsers(ctx context.Context, req *userv1.GetUsersRequest) (*us
 func (s *server) RefreshToken(ctx context.Context, req *userv1.RefreshTokenRequest) (*userv1.RefreshTokenResponse, error) {
 	accessToken, refreshToken, err := s.authProvider.RefreshToken(ctx, req.RefreshToken)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, model.ErrRefreshTokenNotValid) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -106,13 +109,11 @@ func (s *server) RefreshToken(ctx context.Context, req *userv1.RefreshTokenReque
 
 func (s *server) Login(ctx context.Context, req *userv1.LoginRequest) (*userv1.LoginResponse, error) {
 	if err := protovalidate.Validate(req); err != nil {
-		logger.Log().Debug(ctx, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	user, err := getInitDataFromContext(ctx)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -122,7 +123,7 @@ func (s *server) Login(ctx context.Context, req *userv1.LoginRequest) (*userv1.L
 
 	accessToken, refreshToken, err := s.authProvider.Login(ctx, *user)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -134,16 +135,15 @@ func (s *server) Login(ctx context.Context, req *userv1.LoginRequest) (*userv1.L
 
 func (s *server) GetUser(ctx context.Context, req *userv1.GetUserRequest) (*userv1.GetUserResponse, error) {
 	if err := protovalidate.Validate(req); err != nil {
-		logger.Log().Debug(ctx, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	user, err := s.userProvider.GetUser(ctx, req.UserId)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, model.ErrUserNotFound) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -159,18 +159,12 @@ func (s *server) GetUser(ctx context.Context, req *userv1.GetUserRequest) (*user
 
 func (s *server) AddAdmin(ctx context.Context, req *userv1.AddAdminRequest) (*userv1.AddAdminResponse, error) {
 	if err := protovalidate.Validate(req); err != nil {
-		logger.Log().Debug(ctx, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	admin, err := getAdminFromContext(ctx)
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	admin := getAdminFromContext(ctx)
 
 	if err := s.userModifier.AddAdmin(ctx, req.Username, generated.AdminScale(*admin)); err != nil {
-		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, model.ErrAdminAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, model.ErrAdminNotMajor) {
@@ -178,6 +172,7 @@ func (s *server) AddAdmin(ctx context.Context, req *userv1.AddAdminRequest) (*us
 		} else if errors.Is(err, model.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -186,21 +181,15 @@ func (s *server) AddAdmin(ctx context.Context, req *userv1.AddAdminRequest) (*us
 
 func (s *server) DeleteAdmin(ctx context.Context, req *userv1.DeleteAdminRequest) (*userv1.DeleteAdminResponse, error) {
 	if err := protovalidate.Validate(req); err != nil {
-		logger.Log().Debug(ctx, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	admin, err := getAdminFromContext(ctx)
-	if err != nil {
-		logger.Log().Error(ctx, err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
+	admin := getAdminFromContext(ctx)
 	if err := s.userModifier.DeleteAdmin(ctx, req.Username, generated.AdminScale(*admin)); err != nil && !errors.Is(err, model.ErrUserNotFound) {
-		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, model.ErrAdminNotMajor) || errors.Is(err, model.ErrCannotDeleteMajorAdmin) {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -209,23 +198,21 @@ func (s *server) DeleteAdmin(ctx context.Context, req *userv1.DeleteAdminRequest
 
 func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*userv1.InitAdminResponse, error) {
 	if err := protovalidate.Validate(req); err != nil {
-		logger.Log().Debug(ctx, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		logger.Log().Error(ctx, "could not get peer info")
+		s.log.Error("internal error", slog.String("error", "could not get peer info"))
 		return nil, status.Error(codes.Internal, "could not get peer info")
 	}
 
 	if !isLocalhost(p.Addr.String()) {
-		logger.Log().Error(ctx, "request must be from localhost")
+		s.log.Debug("request must be from localhost", slog.String("from", p.Addr.String()))
 		return nil, status.Error(codes.PermissionDenied, "request must be from localhost")
 	}
 
 	if err := s.userModifier.InitAdmin(ctx, req.Username); err != nil {
-		logger.Log().Error(ctx, err.Error())
 		if errors.Is(err, model.ErrAdminAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, model.ErrAdminNotMajor) {
@@ -233,6 +220,7 @@ func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*
 		} else if errors.Is(err, model.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
+		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

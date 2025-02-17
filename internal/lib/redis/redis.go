@@ -3,9 +3,10 @@ package redis
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -28,7 +29,7 @@ type Config struct {
 	DB       int
 }
 
-func New(ctx context.Context, config Config, opts ...Option) (*Redis, error) {
+func New(ctx context.Context, config Config, log *slog.Logger, opts ...Option) (*Redis, error) {
 	rdb := &Redis{
 		connAttempts: _defaultConnAttempts,
 		connTimeout:  _defaultConnTimeout,
@@ -52,14 +53,11 @@ func New(ctx context.Context, config Config, opts ...Option) (*Redis, error) {
 		})
 
 		_, err = db.Ping(ctx).Result()
-		if err != nil {
-			logger.Log().Debug(ctx,
-				"redis is trying to connect, attempts left: %d", rdb.connAttempts,
-			)
-		} else {
+		if err == nil {
 			rdb.Client = db
 			break
 		}
+		log.Debug("redis is trying to connect", slog.Any("attempts left", rdb.connAttempts))
 
 		time.Sleep(rdb.connTimeout)
 
@@ -67,7 +65,7 @@ func New(ctx context.Context, config Config, opts ...Option) (*Redis, error) {
 	}
 
 	if err != nil {
-		logger.Log().Fatal(ctx, "failed to connect to redis")
+		log.Log(ctx, sl.LevelFatal, "failed to connect to redis")
 		return nil, err
 	}
 

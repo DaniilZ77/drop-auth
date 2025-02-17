@@ -11,7 +11,7 @@
   ],
   "host": "localhost:8080",
   "schemes": [
-    "https"
+    "http"
   ],
   "consumes": [
     "application/json"

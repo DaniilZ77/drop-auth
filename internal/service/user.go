@@ -3,10 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -42,6 +43,7 @@ type UserService struct {
 	refreshTokenProvider RefreshTokenProvider
 	refreshTokenModifier RefreshTokenModifier
 	authConfig           model.AuthConfig
+	log                  *slog.Logger
 }
 
 func New(
@@ -50,6 +52,7 @@ func New(
 	refreshTokenProvider RefreshTokenProvider,
 	refreshTokenModifier RefreshTokenModifier,
 	authConfig model.AuthConfig,
+	log *slog.Logger,
 ) *UserService {
 	return &UserService{
 		userModifier:         userModifier,
@@ -57,13 +60,13 @@ func New(
 		refreshTokenProvider: refreshTokenProvider,
 		refreshTokenModifier: refreshTokenModifier,
 		authConfig:           authConfig,
+		log:                  log,
 	}
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, updateUser generated.UpdateUserParams) (*generated.User, error) {
 	user, err := s.userModifier.UpdateUser(ctx, updateUser)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
 		return nil, err
 	}
 
@@ -74,7 +77,7 @@ func (s *UserService) GetUsers(ctx context.Context, params model.GetUsersParams)
 	return s.userProvider.GetUsers(ctx, params)
 }
 
-func (s *UserService) generateToken(ctx context.Context, id uuid.UUID, scale generated.NullAdminScale, expiry time.Duration) (*string, error) {
+func (s *UserService) generateToken(id uuid.UUID, scale generated.NullAdminScale, expiry time.Duration) (*string, error) {
 	claims := jwt.MapClaims{
 		"id":  id,
 		"exp": time.Now().Add(time.Minute * expiry).Unix(),
@@ -88,7 +91,7 @@ func (s *UserService) generateToken(ctx context.Context, id uuid.UUID, scale gen
 
 	token, err := data.SignedString([]byte(s.authConfig.Secret))
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to sign token", sl.Err(err))
 		return nil, err
 	}
 
@@ -98,40 +101,40 @@ func (s *UserService) generateToken(ctx context.Context, id uuid.UUID, scale gen
 func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserParams) (accessToken *string, refreshToken *string, err error) {
 	user, err := s.userProvider.GetUserByExternalID(ctx, saveUser.ExternalID)
 	if err != nil && !errors.Is(err, model.ErrUserNotFound) {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get user", sl.Err(err))
 		return nil, nil, err
 	}
 
 	if errors.Is(err, model.ErrUserNotFound) {
 		_, err := s.userModifier.SaveUser(ctx, saveUser)
 		if err != nil {
-			logger.Log().Error(ctx, err.Error())
+			s.log.Error("failed to save user", sl.Err(err))
 			return nil, nil, err
 		}
 
 		user, err = s.userProvider.GetUserByExternalID(ctx, saveUser.ExternalID)
 		if err != nil {
-			logger.Log().Error(ctx, err.Error())
+			s.log.Error("failed to get user", sl.Err(err))
 			return nil, nil, err
 		}
 	}
 
 	admin, err := s.userProvider.GetAdminByID(ctx, user.ID)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get admin", sl.Err(err))
 		return nil, nil, err
 	}
 
-	accessToken, err = s.generateToken(ctx, user.ID, admin.Scale, time.Duration(s.authConfig.AccessTokenTTL))
+	accessToken, err = s.generateToken(user.ID, admin.Scale, time.Duration(s.authConfig.AccessTokenTTL))
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to generate token", sl.Err(err))
 		return nil, nil, err
 	}
 
 	refreshToken = new(string)
 	*refreshToken = uuid.NewString()
 	if err := s.refreshTokenModifier.SetRefreshToken(ctx, user.ID.String(), *refreshToken, time.Minute*time.Duration(s.authConfig.RefreshTokenTTL)); err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to set refresh token", sl.Err(err))
 		return nil, nil, err
 	}
 
@@ -141,26 +144,26 @@ func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserPara
 func (s *UserService) RefreshToken(ctx context.Context, token string) (accessToken *string, refreshToken *string, err error) {
 	userID, err := s.refreshTokenProvider.GetRefreshToken(ctx, token)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get refresh token", sl.Err(err))
 		return nil, nil, err
 	}
 
 	user, err := s.userProvider.GetAdminByID(ctx, uuid.MustParse(*userID))
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get admin", sl.Err(err))
 		return nil, nil, err
 	}
 
-	accessToken, err = s.generateToken(ctx, user.ID, user.Scale, time.Duration(s.authConfig.AccessTokenTTL))
+	accessToken, err = s.generateToken(user.ID, user.Scale, time.Duration(s.authConfig.AccessTokenTTL))
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to generate token", sl.Err(err))
 		return nil, nil, err
 	}
 
 	refreshToken = new(string)
 	*refreshToken = uuid.NewString()
 	if err = s.refreshTokenModifier.ReplaceRefreshToken(ctx, token, *refreshToken, *userID, time.Minute*time.Duration(s.authConfig.RefreshTokenTTL)); err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to replace refresh token", sl.Err(err))
 		return nil, nil, err
 	}
 
@@ -173,13 +176,13 @@ func (s *UserService) GetUser(ctx context.Context, id string) (*generated.User, 
 
 func (s *UserService) AddAdmin(ctx context.Context, username string, scale generated.AdminScale) error {
 	if scale != generated.AdminScaleMajor {
-		logger.Log().Debug(ctx, model.ErrAdminNotMajor.Error())
+		s.log.Debug("scale of admin is not major")
 		return model.ErrAdminNotMajor
 	}
 
 	user, err := s.userProvider.GetUserByUsername(ctx, username)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get user", sl.Err(err))
 		return err
 	}
 
@@ -191,24 +194,24 @@ func (s *UserService) AddAdmin(ctx context.Context, username string, scale gener
 
 func (s *UserService) DeleteAdmin(ctx context.Context, username string, scale generated.AdminScale) error {
 	if scale != generated.AdminScaleMajor {
-		logger.Log().Debug(ctx, model.ErrAdminNotMajor.Error())
+		s.log.Debug("scale of admin is not major")
 		return model.ErrAdminNotMajor
 	}
 
 	user, err := s.userProvider.GetUserByUsername(ctx, username)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get user", sl.Err(err))
 		return err
 	}
 
 	admin, err := s.userProvider.GetAdminByID(ctx, user.ID)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get admin", sl.Err(err))
 		return err
 	}
 
 	if admin.Scale.Valid && admin.Scale.AdminScale == generated.AdminScaleMinor {
-		logger.Log().Debug(ctx, model.ErrCannotDeleteMajorAdmin.Error())
+		s.log.Debug("cannot delete major admin")
 		return model.ErrCannotDeleteMajorAdmin
 	}
 
@@ -218,7 +221,7 @@ func (s *UserService) DeleteAdmin(ctx context.Context, username string, scale ge
 func (s *UserService) InitAdmin(ctx context.Context, username string) error {
 	user, err := s.userProvider.GetUserByUsername(ctx, username)
 	if err != nil {
-		logger.Log().Error(ctx, err.Error())
+		s.log.Error("failed to get user", sl.Err(err))
 		return err
 	}
 

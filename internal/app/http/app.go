@@ -2,16 +2,17 @@ package http
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -20,9 +21,14 @@ type App struct {
 	httpServer *http.Server
 	cert       string
 	key        string
+	log        *slog.Logger
 }
 
-func New(ctx context.Context, cfg *config.Config) *App {
+func New(
+	ctx context.Context,
+	cfg *config.Config,
+	log *slog.Logger,
+) *App {
 	// creds, err := credentials.NewClientTLSFromFile(cfg.Cert, "") nolint
 	// if err != nil {
 	// 	logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
@@ -30,21 +36,20 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	conn, err := grpc.NewClient(cfg.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Log().Fatal(ctx, "failed to dial server:", err)
+		log.Log(ctx, sl.LevelFatal, "failed to dial server", sl.Err(err))
+		os.Exit(1)
 	}
 
 	gwmux := runtime.NewServeMux()
 	mux := http.NewServeMux()
 	mux.Handle("/", gwmux)
-	mux.Handle("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
-	))
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 
 	// Register user
 	err = userv1.RegisterUserServiceHandler(ctx, gwmux, conn)
 	if err != nil {
-		logger.Log().Fatal(ctx, "failed to register gateway: %v", err)
+		log.Log(ctx, sl.LevelFatal, "failed to register gateway", sl.Err(err))
+		os.Exit(1)
 	}
 
 	// Cors
@@ -61,24 +66,28 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		httpServer: gwServer,
 		cert:       cfg.Cert,
 		key:        cfg.Key,
+		log:        log,
 	}
 }
 
 func (app *App) MustRun(ctx context.Context) {
-	if err := app.Run(ctx); err != nil {
-		logger.Log().Fatal(ctx, "Failed to run http server: %v", err)
+	if err := app.Run(); err != nil {
+		app.log.Log(ctx, sl.LevelFatal, "failed to run http server", sl.Err(err))
+		os.Exit(1)
 	}
 }
 
-func (app *App) Run(ctx context.Context) error {
-	logger.Log().Info(ctx, "http server started on %v", app.httpServer.Addr)
-	return app.httpServer.ListenAndServeTLS(app.cert, app.key)
+func (app *App) Run() error {
+	app.log.Info("http server started", slog.String("port", app.httpServer.Addr))
+	// return app.httpServer.ListenAndServeTLS(app.cert, app.key) nolint
+	return app.httpServer.ListenAndServe()
 }
 
 func (app *App) Stop(ctx context.Context) {
-	logger.Log().Info(ctx, "stopping http server")
+	app.log.Info("stopping http server")
 
 	if err := app.httpServer.Shutdown(ctx); err != nil {
-		logger.Log().Fatal(ctx, "failed to shutdown http server: %v", err)
+		app.log.Log(ctx, sl.LevelFatal, "failed to shutdown http server", sl.Err(err))
+		os.Exit(1)
 	}
 }

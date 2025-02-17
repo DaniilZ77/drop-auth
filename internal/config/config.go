@@ -2,8 +2,6 @@ package config
 
 import (
 	"flag"
-
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 )
 
 type (
@@ -22,7 +20,7 @@ type (
 	}
 
 	Log struct {
-		Level string
+		Env string
 	}
 
 	DB struct {
@@ -48,7 +46,7 @@ type (
 func NewConfig() (*Config, error) {
 	gRPCPort := flag.String("grpc_port", "localhost:50010", "GRPC Port")
 	httpPort := flag.String("http_port", "localhost:8080", "HTTP Port")
-	logLevel := flag.String("log_level", string(logger.InfoLevel), "logger level")
+	env := flag.String("env", "local", "env")
 	dbURL := flag.String("db_url", "", "url for connection to database")
 	readTimeout := flag.Int("read_timeout", 5, "read timeout")
 
@@ -76,7 +74,7 @@ func NewConfig() (*Config, error) {
 			ReadTimeout: *readTimeout,
 		},
 		Log: Log{
-			Level: *logLevel,
+			Env: *env,
 		},
 		DB: DB{
 			URL:           *dbURL,
