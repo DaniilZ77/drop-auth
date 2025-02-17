@@ -2,8 +2,6 @@ package config
 
 import (
 	"flag"
-
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 )
 
 type (
@@ -16,15 +14,20 @@ type (
 	}
 
 	HTTP struct {
-		Port string
+		GRPCPort    string
+		HTTPPort    string
+		ReadTimeout int
 	}
 
 	Log struct {
-		Level string
+		Env string
 	}
 
 	DB struct {
-		URL string
+		URL           string
+		RedisAddr     string
+		RedisPassword string
+		RedisDB       int
 	}
 
 	TLS struct {
@@ -33,43 +36,61 @@ type (
 	}
 
 	Auth struct {
-		JWTSecret string
-		TokenTTL  int
+		JWTSecret       string
+		AccessTokenTTL  int
+		RefreshTokenTTL int
+		TmaSecret       string
 	}
 )
 
 func NewConfig() (*Config, error) {
-	port := flag.String("port", "8080", "HTTP port")
-	logLevel := flag.String("log_level", string(logger.InfoLevel), "logger level")
+	gRPCPort := flag.String("grpc_port", "localhost:50010", "GRPC Port")
+	httpPort := flag.String("http_port", "localhost:8080", "HTTP Port")
+	env := flag.String("env", "local", "env")
 	dbURL := flag.String("db_url", "", "url for connection to database")
+	readTimeout := flag.Int("read_timeout", 5, "read timeout")
 
 	// TLS
 	cert := flag.String("cert", "", "path to cert file")
 	key := flag.String("key", "", "path to key file")
 
-	// JWT
+	// JWT and Tma secrets and config
 	jwtSecret := flag.String("jwt_secret", "", "jwt secret")
-	tokenTTL := flag.Int("token_ttl", 10, "token ttl")
+	accessTokenTTL := flag.Int("access_token_ttl", 2, "access token ttl")
+	refreshTokenTTL := flag.Int("refresh_token_ttl", 14400, "refresh token ttl")
+	tmaSecret := flag.String("tma_secret", "", "tma secret")
+
+	// Redis
+	redisAddr := flag.String("redis_addr", "localhost:6379", "redis address")
+	redisPassword := flag.String("redis_password", "", "redis password")
+	redisDB := flag.Int("redis_db", 0, "redis db")
 
 	flag.Parse()
 
 	cfg := &Config{
 		HTTP: HTTP{
-			Port: *port,
+			GRPCPort:    *gRPCPort,
+			HTTPPort:    *httpPort,
+			ReadTimeout: *readTimeout,
 		},
 		Log: Log{
-			Level: *logLevel,
+			Env: *env,
 		},
 		DB: DB{
-			URL: *dbURL,
+			URL:           *dbURL,
+			RedisAddr:     *redisAddr,
+			RedisPassword: *redisPassword,
+			RedisDB:       *redisDB,
 		},
 		TLS: TLS{
 			Cert: *cert,
 			Key:  *key,
 		},
 		Auth: Auth{
-			JWTSecret: *jwtSecret,
-			TokenTTL:  *tokenTTL,
+			JWTSecret:       *jwtSecret,
+			AccessTokenTTL:  *accessTokenTTL,
+			RefreshTokenTTL: *refreshTokenTTL,
+			TmaSecret:       *tmaSecret,
 		},
 	}
 

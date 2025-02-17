@@ -2,11 +2,12 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
+	"log/slog"
 	"time"
 
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
+	_ "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -16,14 +17,14 @@ const (
 )
 
 type Postgres struct {
-	maxPoolSize  int
-	connAttempts int
+	maxPoolSize  int32
+	connAttempts int32
 	connTimeout  time.Duration
 
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func New(ctx context.Context, dbURL string, opts ...Option) (*Postgres, error) {
+func New(ctx context.Context, dbURL string, log *slog.Logger, opts ...Option) (*Postgres, error) {
 	pg := &Postgres{
 		maxPoolSize:  _defaultMaxPoolSize,
 		connAttempts: _defaultConnAttempts,
@@ -35,22 +36,20 @@ func New(ctx context.Context, dbURL string, opts ...Option) (*Postgres, error) {
 		opt(pg)
 	}
 
-	var db *sql.DB
+	var db *pgxpool.Pool
 	var err error
 
 	for pg.connAttempts > 0 {
-		db, err = sql.Open("pgx", dbURL)
-		if err == nil && db.Ping() == nil {
-			db.SetMaxOpenConns(pg.maxPoolSize)
-			db.SetConnMaxLifetime(time.Hour)
+		db, err = pgxpool.New(ctx, dbURL)
+		if err == nil && db.Ping(ctx) == nil {
+			db.Config().MaxConns = pg.maxPoolSize
+			db.Config().MaxConnLifetime = time.Hour
 
 			pg.DB = db
 			break
 		}
 
-		logger.Log().Debug(ctx,
-			"postgres is trying to connect, attempts left: %d", pg.connAttempts,
-		)
+		log.Debug("postgres is trying to connect", slog.Any("attempts left", pg.connAttempts))
 
 		time.Sleep(pg.connTimeout)
 
@@ -58,7 +57,7 @@ func New(ctx context.Context, dbURL string, opts ...Option) (*Postgres, error) {
 	}
 
 	if err != nil {
-		logger.Log().Fatal(ctx, "failed to connect to database: %s", err.Error())
+		log.Log(ctx, sl.LevelFatal, "failed to connect to database", sl.Err(err))
 		return nil, err
 	}
 
@@ -66,7 +65,5 @@ func New(ctx context.Context, dbURL string, opts ...Option) (*Postgres, error) {
 }
 
 func (p *Postgres) Close(ctx context.Context) {
-	if err := p.DB.Close(); err != nil {
-		logger.Log().Info(ctx, "Error closing database connection: %s", err.Error())
-	}
+	p.DB.Close()
 }
