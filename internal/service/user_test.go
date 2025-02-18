@@ -206,7 +206,6 @@ func TestLogin_Fail(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			tt.beh()
 
@@ -313,7 +312,6 @@ func TestRefreshToken_Fail(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			tt.beh()
 
@@ -414,7 +412,6 @@ func TestAddAdmin_Fail(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			tt.beh()
 
@@ -510,7 +507,6 @@ func TestDeleteAdmin_Fail(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			tt.beh()
 
