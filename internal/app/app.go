@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"os"
 
 	grpcapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/grpc"
 	httpapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/http"
@@ -28,8 +27,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	// Postgres connection
 	pg, err := postgres.New(ctx, cfg.DB.URL, log)
 	if err != nil {
-		log.Log(ctx, sl.LevelFatal, "error with connection to database", sl.Err(err))
-		os.Exit(1)
+		panic(err)
 	}
 
 	// Redis connection
@@ -39,8 +37,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		DB:       cfg.DB.RedisDB,
 	}, log)
 	if err != nil {
-		log.Log(ctx, sl.LevelFatal, "error with connection to redis", sl.Err(err))
-		os.Exit(1)
+		panic(err)
 	}
 
 	// Auth config

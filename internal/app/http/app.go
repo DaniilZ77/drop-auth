@@ -5,11 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
-	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
@@ -36,8 +34,7 @@ func New(
 
 	conn, err := grpc.NewClient(cfg.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Log(ctx, sl.LevelFatal, "failed to dial server", sl.Err(err))
-		os.Exit(1)
+		panic(err)
 	}
 
 	gwmux := runtime.NewServeMux()
@@ -48,8 +45,7 @@ func New(
 	// Register user
 	err = userv1.RegisterUserServiceHandler(ctx, gwmux, conn)
 	if err != nil {
-		log.Log(ctx, sl.LevelFatal, "failed to register gateway", sl.Err(err))
-		os.Exit(1)
+		panic(err)
 	}
 
 	// Cors
@@ -72,8 +68,7 @@ func New(
 
 func (app *App) MustRun(ctx context.Context) {
 	if err := app.Run(); err != nil {
-		app.log.Log(ctx, sl.LevelFatal, "failed to run http server", sl.Err(err))
-		os.Exit(1)
+		panic(err)
 	}
 }
 
@@ -87,7 +82,6 @@ func (app *App) Stop(ctx context.Context) {
 	app.log.Info("stopping http server")
 
 	if err := app.httpServer.Shutdown(ctx); err != nil {
-		app.log.Log(ctx, sl.LevelFatal, "failed to shutdown http server", sl.Err(err))
-		os.Exit(1)
+		panic(err)
 	}
 }

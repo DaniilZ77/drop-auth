@@ -57,7 +57,7 @@ func New(ctx context.Context, dbURL string, log *slog.Logger, opts ...Option) (*
 	}
 
 	if err != nil {
-		log.Log(ctx, sl.LevelFatal, "failed to connect to database", sl.Err(err))
+		log.Error("failed to connect to database", sl.Err(err))
 		return nil, err
 	}
 

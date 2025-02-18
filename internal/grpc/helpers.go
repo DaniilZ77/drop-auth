@@ -9,6 +9,7 @@ import (
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	initdata "github.com/telegram-mini-apps/init-data-golang"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -47,7 +48,7 @@ func AuthMiddleware(secrets map[string]string, requireAuth, requireAdmin map[str
 				return nil, status.Errorf(codes.Unauthenticated, "%s: %s", model.ErrUnauthorized.Error(), err.Error())
 			}
 
-			if requireAdmin[info.FullMethod] && generated.AdminScale(*admin) != generated.AdminScaleMinor && generated.AdminScale(*admin) != generated.AdminScaleMajor {
+			if requireAdmin[info.FullMethod] && (admin == nil || generated.AdminScale(*admin) != generated.AdminScaleMinor && generated.AdminScale(*admin) != generated.AdminScaleMajor) {
 				return nil, status.Errorf(codes.PermissionDenied, "%s: %s", model.ErrUnauthorized, "must be admin")
 			}
 
@@ -101,13 +102,18 @@ func validateToken(token, secret string) (id, admin *string, err error) {
 	return nil, nil, model.ErrUnauthorized
 }
 
-func getUserIDFromContext(ctx context.Context) (*string, error) {
-	id, ok := ctx.Value(userIDContextKey).(string)
+func getUserIDFromContext(ctx context.Context) (*uuid.UUID, error) {
+	userID, ok := ctx.Value(userIDContextKey).(string)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", model.ErrUnauthorized, "user id not provided")
 	}
 
-	return &id, nil
+	userIDParsed, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", model.ErrUnauthorized, "invalid user id, must be uuid")
+	}
+
+	return &userIDParsed, nil
 }
 
 func getAdminFromContext(ctx context.Context) *string {

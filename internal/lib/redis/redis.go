@@ -65,7 +65,7 @@ func New(ctx context.Context, config Config, log *slog.Logger, opts ...Option) (
 	}
 
 	if err != nil {
-		log.Log(ctx, sl.LevelFatal, "failed to connect to redis")
+		log.Error("failed to connect to redis", sl.Err(err))
 		return nil, err
 	}
 

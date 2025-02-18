@@ -7,7 +7,7 @@ require github.com/jackc/pgx/v5 v5.7.1
 require github.com/golang-jwt/jwt v3.2.2+incompatible
 
 require (
-	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.32
+	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.40
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/bufbuild/protovalidate-go v0.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -16,6 +16,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rs/cors v1.11.1
+	github.com/stretchr/testify v1.10.0
 	github.com/telegram-mini-apps/init-data-golang v1.2.0
 )
 
@@ -24,6 +25,7 @@ require (
 	cel.dev/expr v0.19.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/google/cel-go v0.23.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -31,10 +33,13 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240826202546-f6391c0de4c7 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (

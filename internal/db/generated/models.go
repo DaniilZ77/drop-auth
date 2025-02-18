@@ -66,6 +66,7 @@ type User struct {
 }
 
 type UsersAdmin struct {
-	UserID uuid.UUID
-	Scale  AdminScale
+	UserID    uuid.UUID
+	Scale     AdminScale
+	CreatedAt pgtype.Timestamp
 }

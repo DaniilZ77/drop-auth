@@ -1,9 +1,12 @@
 package model
 
 import (
+	"time"
+
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -20,14 +23,21 @@ type (
 		FirstName *string
 		LastName  *string
 		OrderBy   *OrderBy
-		Limit     int
-		Offset    int
+		Limit     uint64
+		Offset    uint64
 	}
 
 	AuthConfig struct {
 		Secret          string
 		AccessTokenTTL  int
 		RefreshTokenTTL int
+	}
+
+	Admin struct {
+		ID        uuid.UUID
+		Username  string
+		Scale     generated.AdminScale
+		CreatedAt time.Time
 	}
 )
 
@@ -54,7 +64,7 @@ func ToModelGetUsersParams(params *userv1.GetUsersRequest) *GetUsersParams {
 	var orderBy *OrderBy
 	if params.OrderBy != nil {
 		orderBy = &OrderBy{
-			Order: params.OrderBy.Order.String(),
+			Order: params.OrderBy.Order,
 			Field: params.OrderBy.Field,
 		}
 	}
@@ -66,15 +76,15 @@ func ToModelGetUsersParams(params *userv1.GetUsersRequest) *GetUsersParams {
 		FirstName: params.FirstName,
 		LastName:  params.LastName,
 		OrderBy:   orderBy,
-		Limit:     int(params.Limit),
-		Offset:    int(params.Offset),
+		Limit:     params.Limit,
+		Offset:    params.Offset,
 	}
 }
 
-func ToGetUsersResponse(users []generated.User, total int, params *GetUsersParams) *userv1.GetUsersResponse {
-	var response userv1.GetUsersResponse
+func ToGetUsersResponse(users []generated.User, total uint64, params *GetUsersParams) *userv1.GetUsersResponse {
+	var resp userv1.GetUsersResponse
 	for _, user := range users {
-		response.Users = append(response.Users, &userv1.User{
+		resp.Users = append(resp.Users, &userv1.User{
 			UserId:    user.ID.String(),
 			Username:  user.Username,
 			Pseudonym: user.Pseudonym,
@@ -83,11 +93,56 @@ func ToGetUsersResponse(users []generated.User, total int, params *GetUsersParam
 			CreatedAt: timestamppb.New(user.CreatedAt.Time),
 		})
 	}
-	response.Pagination = &userv1.Pagination{
-		Records:        int64(total),
-		RecordsPerPage: int64(params.Limit),
-		Pages:          (int64(total) + int64(params.Limit) - 1) / int64(params.Limit),
-		CurPage:        int64(params.Offset)/int64(params.Limit) + 1,
+	resp.Pagination = &userv1.Pagination{
+		Records:        total,
+		RecordsPerPage: params.Limit,
+		Pages:          (total + params.Limit - 1) / params.Limit,
+		CurPage:        params.Offset/params.Limit + 1,
 	}
-	return &response
+	return &resp
+}
+
+func ToModelGetAdminsParams(params *userv1.GetAdminsRequest) (*generated.GetAdminsParams, error) {
+	var userID pgtype.UUID
+	if params.UserId != nil {
+		if err := userID.Scan(*params.UserId); err != nil {
+			return nil, err
+		}
+	}
+
+	var adminScale generated.NullAdminScale
+	if params.AdminScale != nil {
+		if err := adminScale.Scan(*params.AdminScale); err != nil {
+			return nil, err
+		}
+	}
+
+	return &generated.GetAdminsParams{
+		UserID:     userID,
+		Username:   params.UserId,
+		AdminScale: adminScale,
+		Limit:      int32(params.Limit),
+		Offset:     int32(params.Offset),
+	}, nil
+}
+
+func ToGetAdminsResponse(admins []generated.GetAdminsRow, total uint64, params *userv1.GetAdminsRequest) *userv1.GetAdminsResponse {
+	var resp userv1.GetAdminsResponse
+
+	for _, v := range admins {
+		resp.Admins = append(resp.Admins, &userv1.Admin{
+			UserId:     v.ID.String(),
+			Username:   v.Username,
+			AdminScale: string(v.Scale),
+			CreatedAt:  timestamppb.New(v.CreatedAt.Time),
+		})
+	}
+
+	resp.Pagination = &userv1.Pagination{
+		Records:        total,
+		RecordsPerPage: params.Limit,
+		Pages:          (total + params.Limit - 1) / params.Limit,
+		CurPage:        params.Offset/params.Limit + 1,
+	}
+	return &resp
 }

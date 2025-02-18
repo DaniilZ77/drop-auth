@@ -20,14 +20,15 @@ import (
 
 type UserModifier interface {
 	UpdateUser(ctx context.Context, user generated.UpdateUserParams) (*generated.User, error)
-	AddAdmin(ctx context.Context, username string, scale generated.AdminScale) error
-	DeleteAdmin(ctx context.Context, username string, scale generated.AdminScale) error
-	InitAdmin(ctx context.Context, username string) error
+	AddAdmin(ctx context.Context, username string, scale generated.AdminScale) (*model.Admin, error)
+	DeleteAdmin(ctx context.Context, id uuid.UUID, scale generated.AdminScale) error
+	InitAdmin(ctx context.Context, username string) (*model.Admin, error)
 }
 
 type UserProvider interface {
-	GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *int, err error)
-	GetUser(ctx context.Context, id string) (*generated.User, error)
+	GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *uint64, err error)
+	GetUser(ctx context.Context, id uuid.UUID) (*generated.User, error)
+	GetAdmins(ctx context.Context, params generated.GetAdminsParams) (admins []generated.GetAdminsRow, total *uint64, err error)
 }
 
 type AuthProvider interface {
@@ -63,7 +64,7 @@ func (s *server) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) 
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	updateUser := model.ToModelUpdateUserParams(uuid.MustParse(*id), req)
+	updateUser := model.ToModelUpdateUserParams(*id, req)
 	user, err := s.userModifier.UpdateUser(ctx, *updateUser)
 	if err != nil {
 		s.log.Error("internal error", sl.Err(err))
@@ -138,7 +139,12 @@ func (s *server) GetUser(ctx context.Context, req *userv1.GetUserRequest) (*user
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	user, err := s.userProvider.GetUser(ctx, req.UserId)
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "user id must be uuid")
+	}
+
+	user, err := s.userProvider.GetUser(ctx, userID)
 	if err != nil {
 		if errors.Is(err, model.ErrUserNotFound) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -163,8 +169,12 @@ func (s *server) AddAdmin(ctx context.Context, req *userv1.AddAdminRequest) (*us
 	}
 
 	admin := getAdminFromContext(ctx)
+	if admin == nil {
+		return nil, status.Error(codes.Unauthenticated, "must be admin")
+	}
 
-	if err := s.userModifier.AddAdmin(ctx, req.Username, generated.AdminScale(*admin)); err != nil {
+	res, err := s.userModifier.AddAdmin(ctx, req.Username, generated.AdminScale(*admin))
+	if err != nil {
 		if errors.Is(err, model.ErrAdminAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, model.ErrAdminNotMajor) {
@@ -176,7 +186,12 @@ func (s *server) AddAdmin(ctx context.Context, req *userv1.AddAdminRequest) (*us
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &userv1.AddAdminResponse{}, nil
+	return &userv1.AddAdminResponse{
+		UserId:     res.ID.String(),
+		Username:   res.Username,
+		AdminScale: string(res.Scale),
+		CreatedAt:  timestamppb.New(res.CreatedAt),
+	}, nil
 }
 
 func (s *server) DeleteAdmin(ctx context.Context, req *userv1.DeleteAdminRequest) (*userv1.DeleteAdminResponse, error) {
@@ -184,8 +199,17 @@ func (s *server) DeleteAdmin(ctx context.Context, req *userv1.DeleteAdminRequest
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "user id must be uuid")
+	}
+
 	admin := getAdminFromContext(ctx)
-	if err := s.userModifier.DeleteAdmin(ctx, req.Username, generated.AdminScale(*admin)); err != nil && !errors.Is(err, model.ErrUserNotFound) {
+	if admin == nil {
+		return nil, status.Error(codes.Unauthenticated, "must be admin")
+	}
+
+	if err := s.userModifier.DeleteAdmin(ctx, userID, generated.AdminScale(*admin)); err != nil && !errors.Is(err, model.ErrUserNotFound) {
 		if errors.Is(err, model.ErrAdminNotMajor) || errors.Is(err, model.ErrCannotDeleteMajorAdmin) {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
@@ -212,7 +236,8 @@ func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*
 		return nil, status.Error(codes.PermissionDenied, "request must be from localhost")
 	}
 
-	if err := s.userModifier.InitAdmin(ctx, req.Username); err != nil {
+	res, err := s.userModifier.InitAdmin(ctx, req.Username)
+	if err != nil {
 		if errors.Is(err, model.ErrAdminAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		} else if errors.Is(err, model.ErrAdminNotMajor) {
@@ -224,11 +249,35 @@ func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &userv1.InitAdminResponse{}, nil
+	return &userv1.InitAdminResponse{
+		UserId:     res.ID.String(),
+		Username:   res.Username,
+		AdminScale: string(res.Scale),
+		CreatedAt:  timestamppb.New(res.CreatedAt),
+	}, nil
 }
 
 func (s *server) Health(context.Context, *userv1.HealthRequest) (*userv1.HealthResponse, error) {
 	return &userv1.HealthResponse{
 		Message: "OK",
 	}, nil
+}
+
+func (s *server) GetAdmins(ctx context.Context, req *userv1.GetAdminsRequest) (*userv1.GetAdminsResponse, error) {
+	if err := protovalidate.Validate(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	params, err := model.ToModelGetAdminsParams(req)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	admins, total, err := s.userProvider.GetAdmins(ctx, *params)
+	if err != nil {
+		s.log.Error("internal error", sl.Err(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return model.ToGetAdminsResponse(admins, *total, req), nil
 }
