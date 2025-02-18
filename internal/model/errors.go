@@ -10,4 +10,5 @@ var (
 	ErrAdminNotMajor          = errors.New("admin must be major")
 	ErrCannotDeleteMajorAdmin = errors.New("cannot delete major admin")
 	ErrOrderByInvalidField    = errors.New("orderBy: invalid field")
+	ErrAdminNotFound          = errors.New("admin not found")
 )

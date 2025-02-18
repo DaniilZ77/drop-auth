@@ -36,10 +36,19 @@ func (s *UserStore) UpdateUser(ctx context.Context, updateUser generated.UpdateU
 	return &user, nil
 }
 
-func (s *UserStore) GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *int, err error) {
+func (s *UserStore) GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *uint64, err error) {
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	query := builder.Select("*").From("users")
+	query := builder.Select(
+		"id",
+		"username",
+		"pseudonym",
+		"first_name",
+		"last_name",
+		"is_deleted",
+		"created_at",
+		"updated_at",
+	).From("users")
 
 	if params.UserID != nil {
 		query = query.Where(sq.Eq{"id": *params.UserID})
@@ -74,7 +83,7 @@ func (s *UserStore) GetUsers(ctx context.Context, params model.GetUsersParams) (
 		query = query.OrderBy(fmt.Sprintf("%q %s", params.OrderBy.Field, params.OrderBy.Order))
 	}
 
-	query = query.Limit(uint64(params.Limit)).Offset(uint64(params.Offset)) // nolint
+	query = query.Limit(params.Limit).Offset(params.Offset)
 
 	stmt, args, err = query.ToSql()
 	if err != nil {
@@ -123,8 +132,8 @@ func (s *UserStore) GetUserByID(ctx context.Context, id uuid.UUID) (*generated.U
 	return &user, nil
 }
 
-func (s *UserStore) GetUserByUsername(ctx context.Context, username string) (*generated.User, error) {
-	user, err := s.Queries.GetUserByUsername(ctx, username)
+func (s *UserStore) GetUserAdminByUsername(ctx context.Context, username string) (*generated.GetUserAdminByUsernameRow, error) {
+	user, err := s.Queries.GetUserAdminByUsername(ctx, username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, model.ErrUserNotFound
@@ -137,10 +146,6 @@ func (s *UserStore) GetUserByUsername(ctx context.Context, username string) (*ge
 
 func (s *UserStore) SaveAdmin(ctx context.Context, params generated.SaveAdminParams) error {
 	if err := s.Queries.SaveAdmin(ctx, params); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return model.ErrAdminAlreadyExists
-		}
 		return err
 	}
 
@@ -155,8 +160,31 @@ func (s *UserStore) DeleteAdmin(ctx context.Context, userID uuid.UUID) error {
 	return nil
 }
 
-func (s *UserStore) GetAdminByID(ctx context.Context, id uuid.UUID) (*generated.GetAdminByIDRow, error) {
-	admin, err := s.Queries.GetAdminByID(ctx, id)
+func (s *UserStore) GetAdmins(ctx context.Context, params generated.GetAdminsParams) (admins []generated.GetAdminsRow, total *uint64, err error) {
+	cnt, err := s.Queries.CountAdmins(ctx, generated.CountAdminsParams{
+		UserID:     params.UserID,
+		Username:   params.Username,
+		AdminScale: params.AdminScale,
+	})
+	if err != nil {
+		s.log.Error("failed to count admins", sl.Err(err))
+		return nil, nil, err
+	}
+
+	admins, err = s.Queries.GetAdmins(ctx, params)
+	if err != nil {
+		s.log.Error("failed to query admins", sl.Err(err))
+		return nil, nil, err
+	}
+
+	tmp := uint64(cnt)
+	total = &tmp
+
+	return admins, total, nil
+}
+
+func (s *UserStore) GetUserAdminByID(ctx context.Context, id uuid.UUID) (*generated.GetUserAdminByIDRow, error) {
+	user, err := s.Queries.GetUserAdminByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, model.ErrUserNotFound
@@ -164,5 +192,5 @@ func (s *UserStore) GetAdminByID(ctx context.Context, id uuid.UUID) (*generated.
 		return nil, err
 	}
 
-	return &admin, nil
+	return &user, nil
 }

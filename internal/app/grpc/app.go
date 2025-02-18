@@ -4,11 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"net"
-	"os"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
 	user "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/grpc"
-	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	userservice "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/service"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -37,11 +35,13 @@ func New(
 		"/user.UserService/Login":       true,
 		"/user.UserService/AddAdmin":    true,
 		"/user.UserService/DeleteAdmin": true,
+		"/user.UserService/GetAdmins":   true,
 	}
 
 	requireAdmin := map[string]bool{
 		"/user.UserService/AddAdmin":    true,
 		"/user.UserService/DeleteAdmin": true,
+		"/user.UserService/GetAdmins":   true,
 	}
 
 	var opts []grpc.ServerOption
@@ -107,16 +107,16 @@ func interceptorLogger(l *slog.Logger) logging.Logger {
 		case logging.LevelError:
 			l.ErrorContext(ctx, msg, fields...)
 		default:
-			l.Log(ctx, sl.LevelFatal, "unknown level", slog.Any("level", lvl))
-			os.Exit(1)
+			l.Debug("unknown level", slog.Any("level", lvl))
+
+			panic("unknown level")
 		}
 	})
 }
 
 func (a *App) MustRun(ctx context.Context) {
 	if err := a.Run(ctx); err != nil {
-		a.log.Log(ctx, sl.LevelFatal, "failed to run grpc server", sl.Err(err))
-		os.Exit(1)
+		panic(err)
 	}
 }
 

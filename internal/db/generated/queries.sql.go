@@ -9,7 +9,31 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const countAdmins = `-- name: CountAdmins :one
+select count(*)
+from "users_admins" ua
+join "users" u on u.id = ua.user_id
+where u.id = coalesce($1, u.id)
+and u.username = coalesce($2, u.username)
+and ua.scale = coalesce($3, ua.scale)
+and u.is_deleted = false
+`
+
+type CountAdminsParams struct {
+	UserID     pgtype.UUID
+	Username   *string
+	AdminScale NullAdminScale
+}
+
+func (q *Queries) CountAdmins(ctx context.Context, arg CountAdminsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAdmins, arg.UserID, arg.Username, arg.AdminScale)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const deleteAdmin = `-- name: DeleteAdmin :exec
 delete from "users_admins" where user_id = $1
@@ -20,22 +44,97 @@ func (q *Queries) DeleteAdmin(ctx context.Context, userID uuid.UUID) error {
 	return err
 }
 
-const getAdminByID = `-- name: GetAdminByID :one
-select u.id, ua.scale
-from "users" u
+const getAdmins = `-- name: GetAdmins :many
+select u.id, u.username, ua.scale, ua.created_at
+from "users_admins" ua
+join "users" u on u.id = ua.user_id
+where u.id = coalesce($1, u.id)
+and u.username = coalesce($2, u.username)
+and ua.scale = coalesce($3, ua.scale)
+and u.is_deleted = false
+limit $5 offset $4
+`
+
+type GetAdminsParams struct {
+	UserID     pgtype.UUID
+	Username   *string
+	AdminScale NullAdminScale
+	Offset     int32
+	Limit      int32
+}
+
+type GetAdminsRow struct {
+	ID        uuid.UUID
+	Username  string
+	Scale     AdminScale
+	CreatedAt pgtype.Timestamp
+}
+
+func (q *Queries) GetAdmins(ctx context.Context, arg GetAdminsParams) ([]GetAdminsRow, error) {
+	rows, err := q.db.Query(ctx, getAdmins,
+		arg.UserID,
+		arg.Username,
+		arg.AdminScale,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAdminsRow
+	for rows.Next() {
+		var i GetAdminsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Scale,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserAdminByID = `-- name: GetUserAdminByID :one
+select u.id, ua.scale from "users" u
 left join "users_admins" ua on u.id = ua.user_id
 where u.id = $1
 and "is_deleted" = false
 `
 
-type GetAdminByIDRow struct {
+type GetUserAdminByIDRow struct {
 	ID    uuid.UUID
 	Scale NullAdminScale
 }
 
-func (q *Queries) GetAdminByID(ctx context.Context, id uuid.UUID) (GetAdminByIDRow, error) {
-	row := q.db.QueryRow(ctx, getAdminByID, id)
-	var i GetAdminByIDRow
+func (q *Queries) GetUserAdminByID(ctx context.Context, id uuid.UUID) (GetUserAdminByIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserAdminByID, id)
+	var i GetUserAdminByIDRow
+	err := row.Scan(&i.ID, &i.Scale)
+	return i, err
+}
+
+const getUserAdminByUsername = `-- name: GetUserAdminByUsername :one
+select u.id, ua.scale from "users" u
+left join "users_admins" ua on u.id = ua.user_id
+where u.username = $1
+and "is_deleted" = false
+`
+
+type GetUserAdminByUsernameRow struct {
+	ID    uuid.UUID
+	Scale NullAdminScale
+}
+
+func (q *Queries) GetUserAdminByUsername(ctx context.Context, username string) (GetUserAdminByUsernameRow, error) {
+	row := q.db.QueryRow(ctx, getUserAdminByUsername, username)
+	var i GetUserAdminByUsernameRow
 	err := row.Scan(&i.ID, &i.Scale)
 	return i, err
 }
@@ -48,28 +147,6 @@ and "is_deleted" = false
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Pseudonym,
-		&i.FirstName,
-		&i.LastName,
-		&i.IsDeleted,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getUserByUsername = `-- name: GetUserByUsername :one
-select id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at from "users"
-where username = $1
-and "is_deleted" = false
-`
-
-func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByUsername, username)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -127,7 +204,8 @@ const updateUser = `-- name: UpdateUser :one
 update "users"
 set "pseudonym" = coalesce($1, "pseudonym"),
 "first_name" = coalesce($2, "first_name"),
-"last_name" = coalesce($3, "last_name")
+"last_name" = coalesce($3, "last_name"),
+"updated_at" = now()
 where id = $4
 and "is_deleted" = false
 returning id, username, pseudonym, first_name, last_name, is_deleted, created_at, updated_at

@@ -9,39 +9,12 @@ const (
 	envLocal = "local"
 	envDev   = "dev"
 	envProd  = "prod"
-
-	LevelTrace = slog.Level(8)
-	LevelFatal = slog.Level(-12)
 )
-
-var levelNames = map[slog.Leveler]string{
-	LevelTrace: "TRACE",
-	LevelFatal: "FATAL",
-}
 
 func New(env string) *slog.Logger {
 	var log *slog.Logger
 
-	opts := &slog.HandlerOptions{
-		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.LevelKey {
-				level, ok := a.Value.Any().(slog.Level)
-				if !ok {
-					return a
-				}
-
-				levelLabel, ok := levelNames[level]
-				if !ok {
-					levelLabel = level.String()
-				}
-
-				a.Value = slog.StringValue(levelLabel)
-			}
-
-			return a
-		},
-		AddSource: true,
-	}
+	opts := &slog.HandlerOptions{AddSource: true}
 
 	switch env {
 	case envLocal:

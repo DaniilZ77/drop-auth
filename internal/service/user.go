@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockery --name UserModifier
 type UserModifier interface {
 	UpdateUser(ctx context.Context, user generated.UpdateUserParams) (*generated.User, error)
 	SaveUser(ctx context.Context, user generated.SaveUserParams) (*uuid.UUID, error)
@@ -20,17 +21,21 @@ type UserModifier interface {
 	DeleteAdmin(ctx context.Context, userID uuid.UUID) error
 }
 
+//go:generate mockery --name UserProvider
 type UserProvider interface {
-	GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *int, err error)
+	GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *uint64, err error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*generated.User, error)
-	GetUserByUsername(ctx context.Context, username string) (*generated.User, error)
-	GetAdminByID(ctx context.Context, id uuid.UUID) (*generated.GetAdminByIDRow, error)
+	GetUserAdminByUsername(ctx context.Context, username string) (*generated.GetUserAdminByUsernameRow, error)
+	GetUserAdminByID(ctx context.Context, id uuid.UUID) (*generated.GetUserAdminByIDRow, error)
+	GetAdmins(ctx context.Context, params generated.GetAdminsParams) (admins []generated.GetAdminsRow, total *uint64, err error)
 }
 
+//go:generate mockery --name RefreshTokenProvider
 type RefreshTokenProvider interface {
 	GetRefreshToken(ctx context.Context, tokenID string) (*string, error)
 }
 
+//go:generate mockery --name RefreshTokenModifier
 type RefreshTokenModifier interface {
 	SetRefreshToken(ctx context.Context, userID string, tokenID string, expiry time.Duration) error
 	ReplaceRefreshToken(ctx context.Context, oldID, newID, userID string, expiry time.Duration) error
@@ -72,7 +77,7 @@ func (s *UserService) UpdateUser(ctx context.Context, updateUser generated.Updat
 	return user, nil
 }
 
-func (s *UserService) GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *int, err error) {
+func (s *UserService) GetUsers(ctx context.Context, params model.GetUsersParams) (users []generated.User, total *uint64, err error) {
 	return s.userProvider.GetUsers(ctx, params)
 }
 
@@ -98,33 +103,30 @@ func (s *UserService) generateToken(id uuid.UUID, scale generated.NullAdminScale
 }
 
 func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserParams) (accessToken, refreshToken *string, err error) {
-	user, err := s.userProvider.GetUserByUsername(ctx, saveUser.Username)
+	user, err := s.userProvider.GetUserAdminByUsername(ctx, saveUser.Username)
 	if err != nil && !errors.Is(err, model.ErrUserNotFound) {
 		s.log.Error("failed to get user", sl.Err(err))
 		return nil, nil, err
 	}
 
+	var userID uuid.UUID
+	var admin generated.NullAdminScale
 	if errors.Is(err, model.ErrUserNotFound) {
-		_, err := s.userModifier.SaveUser(ctx, saveUser)
+		id, err := s.userModifier.SaveUser(ctx, saveUser)
 		if err != nil {
 			s.log.Error("failed to save user", sl.Err(err))
 			return nil, nil, err
 		}
-
-		user, err = s.userProvider.GetUserByUsername(ctx, saveUser.Username)
-		if err != nil {
-			s.log.Error("failed to get user", sl.Err(err))
-			return nil, nil, err
+		userID = *id
+	} else {
+		userID = user.ID
+		admin = generated.NullAdminScale{
+			AdminScale: user.Scale.AdminScale,
+			Valid:      true,
 		}
 	}
 
-	admin, err := s.userProvider.GetAdminByID(ctx, user.ID)
-	if err != nil {
-		s.log.Error("failed to get admin", sl.Err(err))
-		return nil, nil, err
-	}
-
-	accessToken, err = s.generateToken(user.ID, admin.Scale, time.Duration(s.authConfig.AccessTokenTTL))
+	accessToken, err = s.generateToken(userID, admin, time.Duration(s.authConfig.AccessTokenTTL))
 	if err != nil {
 		s.log.Error("failed to generate token", sl.Err(err))
 		return nil, nil, err
@@ -132,7 +134,7 @@ func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserPara
 
 	refreshToken = new(string)
 	*refreshToken = uuid.NewString()
-	if err := s.refreshTokenModifier.SetRefreshToken(ctx, user.ID.String(), *refreshToken, time.Minute*time.Duration(s.authConfig.RefreshTokenTTL)); err != nil {
+	if err := s.refreshTokenModifier.SetRefreshToken(ctx, userID.String(), *refreshToken, time.Minute*time.Duration(s.authConfig.RefreshTokenTTL)); err != nil {
 		s.log.Error("failed to set refresh token", sl.Err(err))
 		return nil, nil, err
 	}
@@ -147,9 +149,15 @@ func (s *UserService) RefreshToken(ctx context.Context, token string) (accessTok
 		return nil, nil, err
 	}
 
-	user, err := s.userProvider.GetAdminByID(ctx, uuid.MustParse(*userID))
+	userIDParsed, err := uuid.Parse(*userID)
 	if err != nil {
-		s.log.Error("failed to get admin", sl.Err(err))
+		s.log.Error("got invalid user id from refresh token", sl.Err(err), slog.String("user_id", *userID))
+		return nil, nil, err
+	}
+
+	user, err := s.userProvider.GetUserAdminByID(ctx, userIDParsed)
+	if err != nil {
+		s.log.Error("failed to get user", sl.Err(err))
 		return nil, nil, err
 	}
 
@@ -169,63 +177,72 @@ func (s *UserService) RefreshToken(ctx context.Context, token string) (accessTok
 	return accessToken, refreshToken, nil
 }
 
-func (s *UserService) GetUser(ctx context.Context, id string) (*generated.User, error) {
-	return s.userProvider.GetUserByID(ctx, uuid.MustParse(id))
+func (s *UserService) GetUser(ctx context.Context, id uuid.UUID) (*generated.User, error) {
+	return s.userProvider.GetUserByID(ctx, id)
 }
 
-func (s *UserService) AddAdmin(ctx context.Context, username string, scale generated.AdminScale) error {
-	if scale != generated.AdminScaleMajor {
-		s.log.Debug("scale of admin is not major")
-		return model.ErrAdminNotMajor
-	}
-
-	user, err := s.userProvider.GetUserByUsername(ctx, username)
+func (s *UserService) addAdmin(ctx context.Context, username string, saveScale generated.AdminScale) (*model.Admin, error) {
+	user, err := s.userProvider.GetUserAdminByUsername(ctx, username)
 	if err != nil {
 		s.log.Error("failed to get user", sl.Err(err))
-		return err
+		return nil, err
 	}
 
-	return s.userModifier.SaveAdmin(ctx, generated.SaveAdminParams{
+	if user.Scale.Valid {
+		return nil, model.ErrAdminAlreadyExists
+	}
+
+	createdAt := time.Now()
+	err = s.userModifier.SaveAdmin(ctx, generated.SaveAdminParams{
 		UserID: user.ID,
-		Scale:  generated.AdminScaleMinor,
+		Scale:  saveScale,
 	})
+	if err != nil {
+		s.log.Error("failed to save admin", sl.Err(err))
+		return nil, err
+	}
+
+	return &model.Admin{
+		ID:        user.ID,
+		Username:  username,
+		Scale:     saveScale,
+		CreatedAt: createdAt,
+	}, nil
 }
 
-func (s *UserService) DeleteAdmin(ctx context.Context, username string, scale generated.AdminScale) error {
+func (s *UserService) AddAdmin(ctx context.Context, username string, scale generated.AdminScale) (*model.Admin, error) {
+	if scale != generated.AdminScaleMajor {
+		s.log.Debug("scale of admin is not major")
+		return nil, model.ErrAdminNotMajor
+	}
+
+	return s.addAdmin(ctx, username, generated.AdminScaleMinor)
+}
+
+func (s *UserService) DeleteAdmin(ctx context.Context, id uuid.UUID, scale generated.AdminScale) error {
 	if scale != generated.AdminScaleMajor {
 		s.log.Debug("scale of admin is not major")
 		return model.ErrAdminNotMajor
 	}
 
-	user, err := s.userProvider.GetUserByUsername(ctx, username)
+	admin, err := s.userProvider.GetUserAdminByID(ctx, id)
 	if err != nil {
 		s.log.Error("failed to get user", sl.Err(err))
 		return err
 	}
 
-	admin, err := s.userProvider.GetAdminByID(ctx, user.ID)
-	if err != nil {
-		s.log.Error("failed to get admin", sl.Err(err))
-		return err
-	}
-
-	if admin.Scale.Valid && admin.Scale.AdminScale == generated.AdminScaleMinor {
+	if admin.Scale.Valid && admin.Scale.AdminScale == generated.AdminScaleMajor {
 		s.log.Debug("cannot delete major admin")
 		return model.ErrCannotDeleteMajorAdmin
 	}
 
-	return s.userModifier.DeleteAdmin(ctx, user.ID)
+	return s.userModifier.DeleteAdmin(ctx, id)
 }
 
-func (s *UserService) InitAdmin(ctx context.Context, username string) error {
-	user, err := s.userProvider.GetUserByUsername(ctx, username)
-	if err != nil {
-		s.log.Error("failed to get user", sl.Err(err))
-		return err
-	}
+func (s *UserService) InitAdmin(ctx context.Context, username string) (*model.Admin, error) {
+	return s.addAdmin(ctx, username, generated.AdminScaleMajor)
+}
 
-	return s.userModifier.SaveAdmin(ctx, generated.SaveAdminParams{
-		UserID: user.ID,
-		Scale:  generated.AdminScaleMajor,
-	})
+func (s *UserService) GetAdmins(ctx context.Context, params generated.GetAdminsParams) (admins []generated.GetAdminsRow, total *uint64, err error) {
+	return s.userProvider.GetAdmins(ctx, params)
 }
