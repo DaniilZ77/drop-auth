@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
@@ -55,7 +56,7 @@ func AuthMiddleware(secrets map[string]string, requireAuth, requireAdmin map[str
 			ctx = context.WithValue(ctx, userIDContextKey, *id)
 			ctx = context.WithValue(ctx, adminContextKey, admin)
 		case "tma":
-			if err := initdata.Validate(token, secrets["tma"], -1); err != nil {
+			if err := initdata.Validate(token, secrets["tma"], time.Hour); err != nil {
 				return nil, status.Errorf(codes.Unauthenticated, "%s: %s", model.ErrUnauthorized.Error(), err.Error())
 			}
 

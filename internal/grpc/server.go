@@ -124,6 +124,9 @@ func (s *server) Login(ctx context.Context, req *userv1.LoginRequest) (*userv1.L
 
 	accessToken, refreshToken, err := s.authProvider.Login(ctx, *user)
 	if err != nil {
+		if errors.Is(err, model.ErrEmptyPseudonym) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
 		s.log.Error("internal error", sl.Err(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}

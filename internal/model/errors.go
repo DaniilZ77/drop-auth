@@ -11,4 +11,5 @@ var (
 	ErrCannotDeleteMajorAdmin = errors.New("cannot delete major admin")
 	ErrOrderByInvalidField    = errors.New("orderBy: invalid field")
 	ErrAdminNotFound          = errors.New("admin not found")
+	ErrEmptyPseudonym         = errors.New("empty pseudonym")
 )

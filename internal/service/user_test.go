@@ -158,6 +158,26 @@ func TestLogin_SuccessUserNotExists(t *testing.T) {
 	assert.Nil(t, decodedAccessToken.admin)
 }
 
+func TestLogin_FailEmptyPseudonym(t *testing.T) {
+	t.Parallel()
+
+	s := createService(t)
+	ctx := context.Background()
+
+	user := generated.SaveUserParams{
+		Username:  "qwerty",
+		Pseudonym: "",
+		FirstName: "Aleskandr",
+		LastName:  "Igorev",
+	}
+
+	s.userProvider.On("GetUserAdminByUsername", mock.Anything, user.Username).
+		Return(nil, model.ErrUserNotFound).Once()
+
+	_, _, err := s.userService.Login(ctx, user)
+	require.ErrorIs(t, err, model.ErrEmptyPseudonym)
+}
+
 func TestLogin_Fail(t *testing.T) {
 	t.Parallel()
 
@@ -209,7 +229,7 @@ func TestLogin_Fail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.beh()
 
-			_, _, err := s.userService.Login(ctx, generated.SaveUserParams{})
+			_, _, err := s.userService.Login(ctx, generated.SaveUserParams{Pseudonym: "qwerty"})
 			assert.ErrorIs(t, err, tt.err)
 		})
 	}

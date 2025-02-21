@@ -112,6 +112,11 @@ func (s *UserService) Login(ctx context.Context, saveUser generated.SaveUserPara
 	var userID uuid.UUID
 	var admin generated.NullAdminScale
 	if errors.Is(err, model.ErrUserNotFound) {
+		if saveUser.Pseudonym == "" {
+			s.log.Debug("pseudonym of new user must be non empty")
+			return nil, nil, model.ErrEmptyPseudonym
+		}
+
 		id, err := s.userModifier.SaveUser(ctx, saveUser)
 		if err != nil {
 			s.log.Error("failed to save user", sl.Err(err))

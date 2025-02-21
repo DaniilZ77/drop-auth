@@ -1,13 +1,15 @@
 FROM golang:1.23.1-alpine AS builder
 WORKDIR /app
 COPY . .
-RUN go mod download
-RUN go build -o bin/drop-auth ./cmd/auth
-RUN go build -o bin/migrator ./cmd/migrator
+RUN go build -o bin/auth ./cmd/auth
 
 FROM alpine:3.21
 RUN apk --no-cache add curl
 WORKDIR /app
 COPY --from=builder ./app/bin ./bin
-COPY --from=builder ./app/internal/db/migrations ./migrations
+COPY --from=builder ./app/config ./config
 COPY --from=builder ./app/tls ./tls
+
+HEALTHCHECK --interval=30s --timeout=1m --start-period=30s --start-interval=10s --retries=2 CMD ["CMD", "curl", "-f", "http://localhost:8080/health"]
+
+ENTRYPOINT ["./bin/auth"]

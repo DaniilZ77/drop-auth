@@ -2,11 +2,11 @@ package app
 
 import (
 	"context"
+	"log/slog"
 
 	grpcapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/grpc"
 	httpapp "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/app/http"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
-	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
@@ -21,30 +21,24 @@ type App struct {
 	Rdb        *redis.Redis
 }
 
-func New(ctx context.Context, cfg *config.Config) *App {
-	log := sl.New(cfg.Env)
-
+func New(ctx context.Context, cfg *config.Config, log *slog.Logger) *App {
 	// Postgres connection
-	pg, err := postgres.New(ctx, cfg.DB.URL, log)
+	pg, err := postgres.New(ctx, cfg.DatabaseURL, log)
 	if err != nil {
 		panic(err)
 	}
 
 	// Redis connection
-	rdb, err := redis.New(ctx, redis.Config{
-		Addr:     cfg.DB.RedisAddr,
-		Password: cfg.DB.RedisPassword,
-		DB:       cfg.DB.RedisDB,
-	}, log)
+	rdb, err := redis.New(ctx, cfg.RedisURL, log)
 	if err != nil {
 		panic(err)
 	}
 
 	// Auth config
 	authConfig := model.AuthConfig{
-		Secret:          cfg.JWTSecret,
-		AccessTokenTTL:  cfg.AccessTokenTTL,
-		RefreshTokenTTL: cfg.RefreshTokenTTL,
+		Secret:          cfg.Auth.JwtSecret,
+		AccessTokenTTL:  cfg.Auth.AccessTokenTTL,
+		RefreshTokenTTL: cfg.Auth.RefreshTokenTTL,
 	}
 
 	// Store

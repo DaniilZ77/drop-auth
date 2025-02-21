@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/url"
+	"strconv"
 	"time"
 
 	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
@@ -29,12 +31,21 @@ type Config struct {
 	DB       int
 }
 
-func New(ctx context.Context, config Config, log *slog.Logger, opts ...Option) (*Redis, error) {
+func New(ctx context.Context, connString string, log *slog.Logger, opts ...Option) (*Redis, error) {
 	rdb := &Redis{
 		connAttempts: _defaultConnAttempts,
 		connTimeout:  _defaultConnTimeout,
 		maxPoolSize:  _defaultMaxPoolSize,
 	}
+
+	rdbURL, err := url.Parse(connString)
+	if err != nil {
+		log.Error("failed to parse redis url", sl.Err(err), slog.String("url", connString))
+		return nil, err
+	}
+
+	rdbPassword, _ := rdbURL.User.Password()
+	rdbDB, _ := strconv.Atoi(rdbURL.Path[1:])
 
 	// Custom options
 	for _, opt := range opts {
@@ -42,13 +53,11 @@ func New(ctx context.Context, config Config, log *slog.Logger, opts ...Option) (
 	}
 
 	var db *redis.Client
-	var err error
-
 	for rdb.connAttempts > 0 {
 		db = redis.NewClient(&redis.Options{
-			Addr:     config.Addr,
-			Password: config.Password,
-			DB:       config.DB,
+			Addr:     rdbURL.Host,
+			Password: rdbPassword,
+			DB:       rdbDB,
 			PoolSize: rdb.maxPoolSize,
 		})
 
