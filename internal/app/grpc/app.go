@@ -64,8 +64,8 @@ func New(
 	}
 
 	secrets := map[string]string{
-		"bearer": cfg.JWTSecret,
-		"tma":    cfg.TmaSecret,
+		"bearer": cfg.Auth.JwtSecret,
+		"tma":    cfg.Auth.TmaSecret,
 	}
 
 	opts = append(opts, grpc.ChainUnaryInterceptor(
@@ -90,7 +90,7 @@ func New(
 
 	return &App{
 		gRPCServer: gRPCServer,
-		port:       cfg.GRPCPort,
+		port:       cfg.GrpcPort,
 		log:        log,
 	}
 }

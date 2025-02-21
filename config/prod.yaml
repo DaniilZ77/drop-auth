@@ -1,0 +1,10 @@
+env: prod
+database_url: postgres://postgres:postgres@postgres:5432/drop-auth
+redis_url: redis://default:redis@redis:6379/0
+grpc_port: 0.0.0.0:50051
+http_port: 0.0.0.0:8080
+auth:
+  jwt_secret: secret
+  access_token_ttl: 2
+  refresh_token_ttl: 14400
+  tma_secret: 5768337691:AAH5YkoiEuPk8-FZa32hStHTqXiLPtAEhx8

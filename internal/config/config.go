@@ -2,97 +2,64 @@ package config
 
 import (
 	"flag"
+	"os"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
-type (
-	Config struct {
-		HTTP
-		Log
-		DB
-		TLS
-		Auth
+type Config struct {
+	Env         string `yaml:"env" env-default:"local"`
+	DatabaseURL string `yaml:"database_url" env:"DATABASE_URL" env-required:"true"`
+	RedisURL    string `yaml:"redis_url" env:"REDIS_URL" env-required:"true"`
+	Tls         Tls    `yaml:"tls"`
+	GrpcPort    string `yaml:"grpc_port" env-required:"true"`
+	HttpPort    string `yaml:"http_port" env-required:"true"`
+	Auth        Auth   `yaml:"auth" env-required:"true"`
+}
+
+type Tls struct {
+	Cert string `yaml:"cert"`
+	Key  string `yaml:"key"`
+}
+
+type Auth struct {
+	JwtSecret       string `yaml:"jwt_secret" env-required:"true"`
+	AccessTokenTTL  int    `yaml:"access_token_ttl" env-required:"true"`
+	RefreshTokenTTL int    `yaml:"refresh_token_ttl" env-required:"true"`
+	TmaSecret       string `yaml:"tma_secret" env-required:"true"`
+}
+
+func MustLoad() *Config {
+	configPath := fetchConfigPath()
+	if configPath == "" {
+		panic("config path is empty")
 	}
 
-	HTTP struct {
-		GRPCPort    string
-		HTTPPort    string
-		ReadTimeout int
+	return MustLoadPath(configPath)
+}
+
+func MustLoadPath(configPath string) *Config {
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		panic("config file does not exist: " + configPath)
 	}
 
-	Log struct {
-		Env string
+	var cfg Config
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		panic("cannot read config: " + err.Error())
 	}
 
-	DB struct {
-		URL           string
-		RedisAddr     string
-		RedisPassword string
-		RedisDB       int
-	}
+	return &cfg
+}
 
-	TLS struct {
-		Cert string
-		Key  string
-	}
+func fetchConfigPath() string {
+	var res string
 
-	Auth struct {
-		JWTSecret       string
-		AccessTokenTTL  int
-		RefreshTokenTTL int
-		TmaSecret       string
-	}
-)
-
-func NewConfig() (*Config, error) {
-	gRPCPort := flag.String("grpc_port", "localhost:50010", "GRPC Port")
-	httpPort := flag.String("http_port", "localhost:8080", "HTTP Port")
-	env := flag.String("env", "local", "env")
-	dbURL := flag.String("db_url", "", "url for connection to database")
-	readTimeout := flag.Int("read_timeout", 5, "read timeout")
-
-	// TLS
-	cert := flag.String("cert", "", "path to cert file")
-	key := flag.String("key", "", "path to key file")
-
-	// JWT and Tma secrets and config
-	jwtSecret := flag.String("jwt_secret", "", "jwt secret")
-	accessTokenTTL := flag.Int("access_token_ttl", 2, "access token ttl")
-	refreshTokenTTL := flag.Int("refresh_token_ttl", 14400, "refresh token ttl")
-	tmaSecret := flag.String("tma_secret", "", "tma secret")
-
-	// Redis
-	redisAddr := flag.String("redis_addr", "localhost:6379", "redis address")
-	redisPassword := flag.String("redis_password", "", "redis password")
-	redisDB := flag.Int("redis_db", 0, "redis db")
-
+	flag.StringVar(&res, "config", "", "path to config file")
 	flag.Parse()
 
-	cfg := &Config{
-		HTTP: HTTP{
-			GRPCPort:    *gRPCPort,
-			HTTPPort:    *httpPort,
-			ReadTimeout: *readTimeout,
-		},
-		Log: Log{
-			Env: *env,
-		},
-		DB: DB{
-			URL:           *dbURL,
-			RedisAddr:     *redisAddr,
-			RedisPassword: *redisPassword,
-			RedisDB:       *redisDB,
-		},
-		TLS: TLS{
-			Cert: *cert,
-			Key:  *key,
-		},
-		Auth: Auth{
-			JWTSecret:       *jwtSecret,
-			AccessTokenTTL:  *accessTokenTTL,
-			RefreshTokenTTL: *refreshTokenTTL,
-			TmaSecret:       *tmaSecret,
-		},
+	if res == "" {
+		res = os.Getenv("CONFIG_PATH")
 	}
 
-	return cfg, nil
+	return res
 }

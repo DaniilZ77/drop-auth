@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
-	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/config"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
@@ -32,7 +31,7 @@ func New(
 	// 	logger.Log().Fatal(ctx, "failed to create server TLS credentials: %v", err)
 	// }
 
-	conn, err := grpc.NewClient(cfg.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(cfg.GrpcPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
@@ -53,15 +52,14 @@ func New(
 
 	// Server
 	gwServer := &http.Server{
-		Addr:              cfg.HTTPPort,
-		Handler:           withCors,
-		ReadHeaderTimeout: time.Duration(cfg.ReadTimeout) * time.Second,
+		Addr:    cfg.HttpPort,
+		Handler: withCors,
 	}
 
 	return &App{
 		httpServer: gwServer,
-		cert:       cfg.Cert,
-		key:        cfg.Key,
+		cert:       cfg.Tls.Cert,
+		key:        cfg.Tls.Key,
 		log:        log,
 	}
 }

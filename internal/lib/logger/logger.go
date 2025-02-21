@@ -7,7 +7,6 @@ import (
 
 const (
 	envLocal = "local"
-	envDev   = "dev"
 	envProd  = "prod"
 )
 
@@ -20,9 +19,6 @@ func New(env string) *slog.Logger {
 	case envLocal:
 		opts.Level = slog.LevelDebug
 		log = slog.New(slog.NewTextHandler(os.Stdout, opts))
-	case envDev:
-		opts.Level = slog.LevelDebug
-		log = slog.New(slog.NewJSONHandler(os.Stdout, opts))
 	case envProd:
 		opts.Level = slog.LevelInfo
 		log = slog.New(slog.NewJSONHandler(os.Stdout, opts))

@@ -41,7 +41,11 @@ func New(ctx context.Context, dbURL string, log *slog.Logger, opts ...Option) (*
 
 	for pg.connAttempts > 0 {
 		db, err = pgxpool.New(ctx, dbURL)
-		if err == nil && db.Ping(ctx) == nil {
+		if err != nil {
+			continue
+		}
+
+		if err = db.Ping(ctx); err == nil {
 			db.Config().MaxConns = pg.maxPoolSize
 			db.Config().MaxConnLifetime = time.Hour
 
