@@ -183,18 +183,6 @@
             "type": "string"
           },
           {
-            "name": "orderBy.order",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "orderBy.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -585,17 +573,6 @@
           "type": "string"
         },
         "refreshToken": {
-          "type": "string"
-        }
-      }
-    },
-    "userOrderByAdmins": {
-      "type": "object",
-      "properties": {
-        "order": {
-          "type": "string"
-        },
-        "field": {
           "type": "string"
         }
       }

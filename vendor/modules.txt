@@ -17,7 +17,7 @@ github.com/Azure/go-ansiterm/winterm
 ## explicit; go 1.16
 github.com/BurntSushi/toml
 github.com/BurntSushi/toml/internal
-# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.40
+# github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.41
 ## explicit; go 1.23.1
 github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user
 # github.com/Masterminds/squirrel v1.5.4

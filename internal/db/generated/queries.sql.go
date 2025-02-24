@@ -52,6 +52,7 @@ where u.id = coalesce($1, u.id)
 and u.username = coalesce($2, u.username)
 and ua.scale = coalesce($3, ua.scale)
 and u.is_deleted = false
+order by ua.created_at
 limit $5 offset $4
 `
 

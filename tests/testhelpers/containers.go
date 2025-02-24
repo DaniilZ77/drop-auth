@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	initdata "github.com/telegram-mini-apps/init-data-golang"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -20,7 +20,7 @@ import (
 
 type PostgresContainer struct {
 	*postgres.PostgresContainer
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
 func CreatePostgresContainer(ctx context.Context, n *testcontainers.DockerNetwork) (*PostgresContainer, *string, error) {
@@ -47,7 +47,7 @@ func CreatePostgresContainer(ctx context.Context, n *testcontainers.DockerNetwor
 		return nil, nil, err
 	}
 
-	db, err := pgx.Connect(ctx, connStr)
+	db, err := pgxpool.New(ctx, connStr)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -159,7 +159,7 @@ func WithBearerToken(token string) Option {
 	}
 }
 
-func (b *BackendContainer) modifyRequest(method string, path string, body string, opts ...Option) (*http.Response, error) {
+func (b *BackendContainer) bodyRequest(method string, path string, body string, opts ...Option) (*http.Response, error) {
 	url, err := url.JoinPath(b.baseURL, path)
 	if err != nil {
 		return nil, err
@@ -183,20 +183,24 @@ func (b *BackendContainer) modifyRequest(method string, path string, body string
 }
 
 func (b *BackendContainer) PostRequest(path string, body string, opts ...Option) (*http.Response, error) {
-	return b.modifyRequest(http.MethodPost, path, body, opts...)
+	return b.bodyRequest(http.MethodPost, path, body, opts...)
 }
 
 func (b *BackendContainer) PatchRequest(path string, body string, opts ...Option) (*http.Response, error) {
-	return b.modifyRequest(http.MethodPatch, path, body, opts...)
+	return b.bodyRequest(http.MethodPatch, path, body, opts...)
 }
 
-func (b *BackendContainer) GetRequest(path string, vals url.Values, opts ...Option) (*http.Response, error) {
+func (b *BackendContainer) urlvalsRequest(method, path string, vals url.Values, opts ...Option) (*http.Response, error) {
+	if vals == nil {
+		vals = url.Values{}
+	}
+
 	url, err := url.JoinPath(b.baseURL, path)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, url+"?"+vals.Encode(), nil)
+	req, err := http.NewRequest(method, url+"?"+vals.Encode(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -211,6 +215,14 @@ func (b *BackendContainer) GetRequest(path string, vals url.Values, opts ...Opti
 	}
 
 	return resp, nil
+}
+
+func (b *BackendContainer) DeleteRequest(path string, vals url.Values, opts ...Option) (*http.Response, error) {
+	return b.urlvalsRequest(http.MethodDelete, path, vals, opts...)
+}
+
+func (b *BackendContainer) GetRequest(path string, vals url.Values, opts ...Option) (*http.Response, error) {
+	return b.urlvalsRequest(http.MethodGet, path, vals, opts...)
 }
 
 type Network struct {
