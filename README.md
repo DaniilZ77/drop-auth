@@ -44,7 +44,7 @@
 | GET   | `/health`         | `-`        | Проверка доступности сервиса  |
 | POST   | `/v1/admin/init`    | `-`        | Создание `major` админа (запрос только с `localhost`)           |
 | POST   | `/v1/admin`    | `major admin`   | Добавление `minor` админа по `username` (нужен `jwt` токен)  |
-| DELETE | `/v1/admin/{user_id}`    | `major admin`        | Удаление `minor` админа по `username` (нужен `jwt` токен)      |
+| DELETE | `/v1/admin/{user_id}`    | `major admin`        | Удаление `minor` админа по `user_id` (нужен `jwt` токен)      |
 | POST| `/v1/auth/login`    | `-`   | Создание пользователя и выдача токенов (нужен `telegram mini apps` токен авторизации)     |
 | POST| `/v1/auth/token/refresh`    | `-`   | Ротация `jwt` токенов (нужен `refresh token`)     |
 | PATCH| `/v1/user`    | `-`   | Обновление пользователя (нужен `access token`, где хранится `id` пользователя)     |

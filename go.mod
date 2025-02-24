@@ -7,7 +7,7 @@ require github.com/jackc/pgx/v5 v5.7.1
 require github.com/golang-jwt/jwt v3.2.2+incompatible
 
 require (
-	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.40
+	github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos v0.1.41
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/bufbuild/protovalidate-go v0.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.1

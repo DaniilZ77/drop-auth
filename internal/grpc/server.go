@@ -243,8 +243,6 @@ func (s *server) InitAdmin(ctx context.Context, req *userv1.InitAdminRequest) (*
 	if err != nil {
 		if errors.Is(err, model.ErrAdminAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
-		} else if errors.Is(err, model.ErrAdminNotMajor) {
-			return nil, status.Error(codes.PermissionDenied, err.Error())
 		} else if errors.Is(err, model.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}

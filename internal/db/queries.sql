@@ -45,6 +45,7 @@ where u.id = coalesce(sqlc.narg('user_id'), u.id)
 and u.username = coalesce(sqlc.narg('username'), u.username)
 and ua.scale = coalesce(sqlc.narg('admin_scale'), ua.scale)
 and u.is_deleted = false
+order by ua.created_at
 limit sqlc.arg('limit') offset sqlc.arg('offset');
 
 -- name: CountAdmins :one

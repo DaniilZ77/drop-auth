@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,6 +14,8 @@ import (
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/tests/testhelpers"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,9 +64,7 @@ func (suite *ApiTestSuite) SetupSuite() {
 }
 
 func (suite *ApiTestSuite) TearDownSuite() {
-	if err := suite.pgContainer.DB.Close(suite.ctx); err != nil {
-		log.Fatalf("error closing postgres connection: %s", err)
-	}
+	suite.pgContainer.DB.Close()
 	if err := suite.pgContainer.Terminate(suite.ctx); err != nil {
 		log.Fatalf("error terminating postgres container: %s", err)
 	}
@@ -519,6 +520,231 @@ func (suite *ApiTestSuite) TestUpdateUser_Success() {
 		LastName:  "Ovechkin",
 		Pseudonym: "qwerty123",
 	}, u)
+}
+
+func (suite *ApiTestSuite) TestInitAdmin_Success() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	var id string
+	var username string
+	row := suite.pgContainer.DB.QueryRow(suite.ctx, `select id, username from users order by random() limit 1`)
+
+	err := row.Scan(&id, &username)
+	require.NoError(t, err)
+
+	createdAt := time.Now()
+	resp, err := suite.backendContainer.PostRequest("/v1/admin/init", fmt.Sprintf(`{"username": "%s"}`, username))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	type user struct {
+		ID         string    `json:"userId"`
+		Username   string    `json:"username"`
+		AdminScale string    `json:"adminScale"`
+		CreatedAt  time.Time `json:"createdAt"`
+	}
+
+	u := user{}
+	err = json.NewDecoder(resp.Body).Decode(&u)
+	require.NoError(t, err)
+
+	assert.Equal(t, id, u.ID)
+	assert.Equal(t, username, u.Username)
+	assert.Equal(t, "major", u.AdminScale)
+	const delta = 10
+	assert.InDelta(t, createdAt.Unix(), u.CreatedAt.Unix(), delta)
+}
+
+func (suite *ApiTestSuite) TestInitAdmin_FailUserNotFound() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	resp, err := suite.backendContainer.PostRequest("/v1/admin/init", `{"username": "qwerty"}`)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func (suite *ApiTestSuite) TestInitAdmin_FailAdminAlreadyExists() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	resp, err := suite.backendContainer.PostRequest("/v1/admin/init", `{"username": "cshitliffe0"}`)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, err = suite.backendContainer.PostRequest("/v1/admin/init", `{"username": "cshitliffe0"}`)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+}
+
+func (suite *ApiTestSuite) getToken(adminScale string) (string, error) {
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
+		"id":    uuid.NewString(),
+		"admin": adminScale,
+	}).SignedString([]byte("secret"))
+}
+
+func (suite *ApiTestSuite) TestAddAdmin_Success() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	var id, username string
+	row := suite.pgContainer.DB.QueryRow(suite.ctx, `select id, username from users order by random() limit 2`)
+
+	err := row.Scan(&id, &username)
+	require.NoError(t, err)
+
+	token, err := suite.getToken("major")
+	require.NoError(t, err)
+
+	type user struct {
+		ID         string    `json:"userId"`
+		Username   string    `json:"username"`
+		AdminScale string    `json:"adminScale"`
+		CreatedAt  time.Time `json:"createdAt"`
+	}
+
+	createdAt := time.Now()
+	resp, err := suite.backendContainer.PostRequest("/v1/admin", fmt.Sprintf(`{"username": "%s"}`, username), testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	u := &user{}
+	err = json.NewDecoder(resp.Body).Decode(&u)
+	require.NoError(t, err)
+
+	assert.Equal(t, id, u.ID)
+	assert.Equal(t, username, u.Username)
+	assert.Equal(t, "minor", u.AdminScale)
+	const delta = 10
+	assert.InDelta(t, createdAt.Unix(), u.CreatedAt.Unix(), delta)
+}
+
+func (suite *ApiTestSuite) TestAddAdmin_FailAdminNotMajor() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	token, err := suite.getToken("minor")
+	require.NoError(t, err)
+
+	resp, err := suite.backendContainer.PostRequest("/v1/admin", `{"username": "qwerty"}`, testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func (suite *ApiTestSuite) TestAddAdmin_FailAdminAlreadyExists() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	token, err := suite.getToken("major")
+	require.NoError(t, err)
+
+	resp, err := suite.backendContainer.PostRequest("/v1/admin", `{"username": "rhuison7"}`, testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, err = suite.backendContainer.PostRequest("/v1/admin", `{"username": "rhuison7"}`, testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+}
+
+func (suite *ApiTestSuite) TestAddAdmin_FailUserNotFound() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	token, err := suite.getToken("major")
+	require.NoError(t, err)
+
+	resp, err := suite.backendContainer.PostRequest("/v1/admin", `{"username": "qwerty"}`, testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func (suite *ApiTestSuite) TestDeleteAdmin_Success() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	var id string
+	row := suite.pgContainer.DB.QueryRow(suite.ctx, `select id from users order by random() limit 1`)
+	err := row.Scan(&id)
+	require.NoError(t, err)
+
+	_, err = suite.pgContainer.DB.Exec(suite.ctx, fmt.Sprintf(`insert into users_admins (user_id, scale) values ('%s', 'minor')`, id))
+	require.NoError(t, err)
+
+	token, err := suite.getToken("major")
+	require.NoError(t, err)
+
+	resp, err := suite.backendContainer.DeleteRequest("/v1/admin/"+id, nil, testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	row = suite.pgContainer.DB.QueryRow(suite.ctx, `select 1 from users_admins where user_id = $1`, id)
+	err = row.Scan(new(int))
+	assert.ErrorIs(t, err, sql.ErrNoRows)
+}
+
+func (suite *ApiTestSuite) TestDeleteAdmin_FailAdminNotMajor() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	token, err := suite.getToken("minor")
+	require.NoError(t, err)
+
+	resp, err := suite.backendContainer.DeleteRequest("/v1/admin/"+uuid.NewString(), nil, testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func (suite *ApiTestSuite) TestDeleteAdmin_FailCannotDeleteMajorAdmin() {
+	t := suite.T()
+
+	if testing.Short() {
+		t.Skip()
+	}
+
+	var id string
+	row := suite.pgContainer.DB.QueryRow(suite.ctx, `select id from users order by random() limit 1`)
+	err := row.Scan(&id)
+	require.NoError(t, err)
+
+	_, err = suite.pgContainer.DB.Exec(suite.ctx, fmt.Sprintf(`insert into users_admins (user_id, scale) values ('%s', 'major')`, id))
+	require.NoError(t, err)
+
+	token, err := suite.getToken("major")
+	require.NoError(t, err)
+
+	resp, err := suite.backendContainer.DeleteRequest("/v1/admin/"+id, nil, testhelpers.WithBearerToken(token))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
 
 func TestApiTestSuite(t *testing.T) {

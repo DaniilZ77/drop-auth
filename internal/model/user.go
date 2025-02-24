@@ -119,7 +119,7 @@ func ToModelGetAdminsParams(params *userv1.GetAdminsRequest) (*generated.GetAdmi
 
 	return &generated.GetAdminsParams{
 		UserID:     userID,
-		Username:   params.UserId,
+		Username:   params.Username,
 		AdminScale: adminScale,
 		Limit:      int32(params.Limit),
 		Offset:     int32(params.Offset),
