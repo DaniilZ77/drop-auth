@@ -10,6 +10,6 @@ COPY --from=builder ./app/bin ./bin
 COPY --from=builder ./app/config ./config
 COPY --from=builder ./app/tls ./tls
 
-HEALTHCHECK --interval=30s --timeout=1m --start-period=30s --start-interval=10s --retries=2 CMD ["CMD", "curl", "-f", "http://localhost:8080/health"]
+HEALTHCHECK --interval=30s --timeout=1m --start-period=30s --start-interval=10s --retries=2 CMD curl -f http://localhost:8080/health
 
 ENTRYPOINT ["./bin/auth"]

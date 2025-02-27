@@ -56,3 +56,9 @@
 Схема базы данных находится на следующем ресурсе:
 
 - https://dbdiagram.io/d/drop-auth-67b3a7fa263d6cf9a07aeb87
+
+## Прото-файлы
+
+https://github.com/MAXXXIMUS-tropical-milkshake/drop-protos
+
+Для более подробного ознакомления с API следует читать документацию (в `docs`).
