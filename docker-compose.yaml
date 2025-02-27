@@ -5,6 +5,7 @@ services:
     build: .
     ports:
       - 8080:8080
+      - 50051:50051
     networks:
       - drop-auth
       - drop-shared
@@ -19,6 +20,8 @@ services:
         condition: service_started
   migrate:
     image: migrate/migrate
+    env_file:
+      - .env
     networks:
       - drop-auth
     volumes:
@@ -57,8 +60,6 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     networks:
       - drop-auth
-    ports:
-      - 6378:6379
     volumes:
       - redis-data:/var/lib/redis/data
     env_file:
