@@ -57,6 +57,7 @@ func ToUpdateUserResponse(user *generated.User) *userv1.UpdateUserResponse {
 		Pseudonym: user.Pseudonym,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
+		CreatedAt: timestamppb.New(user.CreatedAt.Time),
 	}
 }
 
