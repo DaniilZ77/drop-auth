@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/domain/model"
 	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	userv1 "github.com/MAXXXIMUS-tropical-milkshake/beatflow-protos/gen/go/user"
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/google/uuid"

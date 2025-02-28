@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/domain/model"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/redis"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	rdb "github.com/redis/go-redis/v9"
 )
 

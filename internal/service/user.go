@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/domain/model"
 	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )

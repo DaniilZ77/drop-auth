@@ -8,9 +8,9 @@ import (
 	"log/slog"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/domain/model"
 	sl "github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/logger"
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/lib/postgres"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"

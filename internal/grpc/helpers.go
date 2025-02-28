@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/db/generated"
-	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/model"
+	"github.com/MAXXXIMUS-tropical-milkshake/beatflow-auth/internal/domain/model"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	initdata "github.com/telegram-mini-apps/init-data-golang"
