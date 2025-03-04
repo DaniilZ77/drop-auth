@@ -64,7 +64,7 @@ func (s *server) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) 
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	updateUser := model.ToModelUpdateUserParams(*id, req)
+	updateUser := model.ToDomainUpdateUserParams(*id, req)
 	user, err := s.userModifier.UpdateUser(ctx, *updateUser)
 	if err != nil {
 		s.log.Error("internal error", sl.Err(err))
@@ -79,7 +79,7 @@ func (s *server) GetUsers(ctx context.Context, req *userv1.GetUsersRequest) (*us
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	params := model.ToModelGetUsersParams(req)
+	params := model.ToDomainGetUsersParams(req)
 	users, total, err := s.userProvider.GetUsers(ctx, *params)
 	if err != nil {
 		if errors.Is(err, model.ErrOrderByInvalidField) {
@@ -269,7 +269,7 @@ func (s *server) GetAdmins(ctx context.Context, req *userv1.GetAdminsRequest) (*
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	params, err := model.ToModelGetAdminsParams(req)
+	params, err := model.ToDomainGetAdminsParams(req)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

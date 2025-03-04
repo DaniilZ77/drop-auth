@@ -41,7 +41,7 @@ type (
 	}
 )
 
-func ToModelUpdateUserParams(id uuid.UUID, user *userv1.UpdateUserRequest) *generated.UpdateUserParams {
+func ToDomainUpdateUserParams(id uuid.UUID, user *userv1.UpdateUserRequest) *generated.UpdateUserParams {
 	return &generated.UpdateUserParams{
 		ID:        id,
 		Pseudonym: user.Pseudonym,
@@ -61,7 +61,7 @@ func ToUpdateUserResponse(user *generated.User) *userv1.UpdateUserResponse {
 	}
 }
 
-func ToModelGetUsersParams(params *userv1.GetUsersRequest) *GetUsersParams {
+func ToDomainGetUsersParams(params *userv1.GetUsersRequest) *GetUsersParams {
 	var orderBy *OrderBy
 	if params.OrderBy != nil {
 		orderBy = &OrderBy{
@@ -83,9 +83,9 @@ func ToModelGetUsersParams(params *userv1.GetUsersRequest) *GetUsersParams {
 }
 
 func ToGetUsersResponse(users []generated.User, total uint64, params *GetUsersParams) *userv1.GetUsersResponse {
-	var resp userv1.GetUsersResponse
+	var res userv1.GetUsersResponse
 	for _, user := range users {
-		resp.Users = append(resp.Users, &userv1.User{
+		res.Users = append(res.Users, &userv1.User{
 			UserId:    user.ID.String(),
 			Username:  user.Username,
 			Pseudonym: user.Pseudonym,
@@ -94,16 +94,16 @@ func ToGetUsersResponse(users []generated.User, total uint64, params *GetUsersPa
 			CreatedAt: timestamppb.New(user.CreatedAt.Time),
 		})
 	}
-	resp.Pagination = &userv1.Pagination{
+	res.Pagination = &userv1.Pagination{
 		Records:        total,
 		RecordsPerPage: params.Limit,
 		Pages:          (total + params.Limit - 1) / params.Limit,
 		CurPage:        params.Offset/params.Limit + 1,
 	}
-	return &resp
+	return &res
 }
 
-func ToModelGetAdminsParams(params *userv1.GetAdminsRequest) (*generated.GetAdminsParams, error) {
+func ToDomainGetAdminsParams(params *userv1.GetAdminsRequest) (*generated.GetAdminsParams, error) {
 	var userID pgtype.UUID
 	if params.UserId != nil {
 		if err := userID.Scan(*params.UserId); err != nil {
@@ -128,10 +128,9 @@ func ToModelGetAdminsParams(params *userv1.GetAdminsRequest) (*generated.GetAdmi
 }
 
 func ToGetAdminsResponse(admins []generated.GetAdminsRow, total uint64, params *userv1.GetAdminsRequest) *userv1.GetAdminsResponse {
-	var resp userv1.GetAdminsResponse
-
+	var res userv1.GetAdminsResponse
 	for _, v := range admins {
-		resp.Admins = append(resp.Admins, &userv1.Admin{
+		res.Admins = append(res.Admins, &userv1.Admin{
 			UserId:     v.ID.String(),
 			Username:   v.Username,
 			AdminScale: string(v.Scale),
@@ -139,11 +138,11 @@ func ToGetAdminsResponse(admins []generated.GetAdminsRow, total uint64, params *
 		})
 	}
 
-	resp.Pagination = &userv1.Pagination{
+	res.Pagination = &userv1.Pagination{
 		Records:        total,
 		RecordsPerPage: params.Limit,
 		Pages:          (total + params.Limit - 1) / params.Limit,
 		CurPage:        params.Offset/params.Limit + 1,
 	}
-	return &resp
+	return &res
 }
